@@ -18,6 +18,12 @@ const config = {
     extraMetadata: {
         version: process.env.VITE_APP_VERSION,
     },
+    linux: {
+        target: {
+            target: 'deb',
+            arch: ['armv7l'],
+        },
+    },
 };
 
 module.exports = config;

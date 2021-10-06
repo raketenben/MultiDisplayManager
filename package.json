@@ -1,5 +1,9 @@
 {
     "name": "vite-electron-builder",
+    "author": {
+        "name": "Ben Ehrengruber",
+        "email": "benehgj@gmail.com"
+    },
     "private": true,
     "engines": {
         "node": ">=v14.16",
