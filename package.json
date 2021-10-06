@@ -55,7 +55,6 @@
     "dependencies": {
         "@types/bonjour": "^3.5.9",
         "@types/express": "^4.17.13",
-        "@types/socket.io": "^3.0.2",
         "bonjour": "^3.5.0",
         "bootstrap": "^5.1.1",
         "electron-updater": "4.6.0",
