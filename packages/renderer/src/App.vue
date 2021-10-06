@@ -1,31 +1,26 @@
 <template>
-  <img
-    alt="Vue logo"
-    src="../assets/logo.svg"
-    width="300"
+  <div 
+    class="alert alert-primary" 
+    role="alert"
   >
-  <app-navigation />
+    <p>sfsfsf</p>
+  </div>
   <router-view />
 </template>
 
 <script lang="ts">
+import '/@/../../../node_modules/bootstrap/scss/bootstrap.scss';
+
 import {defineComponent} from 'vue';
-import AppNavigation from '/@/components/AppNavigation.vue';
+
 export default defineComponent({
   name: 'App',
-  components: {
-    AppNavigation,
+  created: function(){
+      window.link.on('interfaceTypeResponse',(_interface) => {
+      this.$router.push(_interface);
+    });
+    window.link.send('interfaceTypeRequest',true);
   },
 });
-</script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
+</script>

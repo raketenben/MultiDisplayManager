@@ -17,8 +17,9 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {useElectron} from '/@/use/electron';
+
 export default defineComponent({
-  name: 'App',
+  name: 'Client',
   setup() {
     const {versions} = useElectron();
     // It makes no sense to make "versions" reactive

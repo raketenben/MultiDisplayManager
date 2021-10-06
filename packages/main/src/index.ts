@@ -2,8 +2,11 @@ import {app, BrowserWindow} from 'electron';
 import {join} from 'path';
 import {URL} from 'url';
 
+import Client from './client';
+import Host from './host';
 
 const isSingleInstance = app.requestSingleInstanceLock();
+let appState : Client | Host;
 
 if (!isSingleInstance) {
   app.quit();
@@ -34,6 +37,13 @@ const createWindow = async () => {
       preload: join(__dirname, '../../preload/dist/index.cjs'),
     },
   });
+  mainWindow.setMenuBarVisibility(false);
+
+  if(process.argv.includes('--viewer')) {
+    appState = new Client(mainWindow);
+  }else{
+    appState = new Host(mainWindow);
+  }
 
   /**
    * If you install `show: true` then it can cause issues when trying to close the window.
@@ -47,6 +57,7 @@ const createWindow = async () => {
     if (import.meta.env.MODE === 'development') {
       mainWindow?.webContents.openDevTools();
     }
+    console.log(appState.name);
   });
 
   /**
