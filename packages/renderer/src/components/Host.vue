@@ -49,16 +49,16 @@
   <div class="container p-2">
     <div class="row g-2">
       <div 
-        v-for="([socketName,files], i) in clients" 
+        v-for="([socketName,files],i) in clients" 
         :key="socketName" 
         class="col" 
       >
         <mss 
           :blackout="blackoutActive" 
           :identifie="identifieActive" 
-          :index="i" 
           :socket-name="socketName" 
-          :files="files"
+          :files="files" 
+          :index="parseInt(i.toString())" 
         />
       </div>
     </div>
