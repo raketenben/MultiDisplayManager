@@ -17,6 +17,7 @@ const config = {
     resolve: {
         alias: {
             '/@/': join(PACKAGE_ROOT, 'src') + '/',
+            'socket.io-client': 'socket.io-client/dist/socket.io.js',
         },
     },
     plugins: [vue()],

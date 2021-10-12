@@ -1,10 +1,4 @@
 <template>
-  <div 
-    class="alert alert-primary" 
-    role="alert"
-  >
-    <p>sfsfsf</p>
-  </div>
   <router-view />
 </template>
 
@@ -16,11 +10,18 @@ import {defineComponent} from 'vue';
 export default defineComponent({
   name: 'App',
   created: function(){
-      window.link.on('interfaceTypeResponse',(_interface) => {
+    //listen for app interface out
+    
+    window.link.getInterfaceType().then((_interface) => {
       this.$router.push(_interface);
     });
-    window.link.send('interfaceTypeRequest',true);
   },
 });
 
 </script>
+
+<style>
+  * {
+    box-sizing:border-box
+  }
+</style>

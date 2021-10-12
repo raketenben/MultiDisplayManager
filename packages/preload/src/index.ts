@@ -17,35 +17,47 @@ const api: ElectronApi = {
 contextBridge.exposeInMainWorld(apiKey, api);
 
 
-const linkApi : LinkAPI = {
-    send: (channel: string, data: any) => {
-        // whitelist channels
-        const validChannels = ['interfaceTypeRequest','availableHostRequest'];
-        if (validChannels.includes(channel)) {
-            ipcRenderer.send(channel, data);
-        }
-    },
-    on: (channel: string, callback : (...arg0: any[]) => any) => {
-        const validChannels = ['interfaceTypeResponse','availableHostResponse'];
-        if (validChannels.includes(channel)) {
-            // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on(channel, (event, ...args) => {
-                console.log(channel);
-                callback(...args);
+const linkApi = {
+    //inmterface Type
+    getInterfaceType: async function() : Promise<string> {
+        return new Promise(function(res){
+            ipcRenderer.send('interfaceTypeRequest',true);
+            ipcRenderer.once('interfaceTypeResponse',(event,type) => {
+                res(type);
             });
-        }
+        });
+    },
+    onNewHost: function(callback : (newHost : DiscoverData) => void) : void {
+        ipcRenderer.send('availableHostUpdateRequest', true);
+        ipcRenderer.on('availableHostUpdateResponse',(event,host : DiscoverData) => {
+            callback(host);
+        });
+    },
+    onClientsUpdated: function(callback : (newHost : Map<string,string[]>) => void) : void {
+        ipcRenderer.send('availableClientUpdateRequest', true);
+        ipcRenderer.on('availableClientUpdateResponse',(event,client : Map<string,string[]>) => {
+            callback(client);
+        });
+    },
+    selectFiles: function(socketName : string) : void {
+        ipcRenderer.send('selectFilesForDisplayRequest',socketName);
+    },
+    identifieMonitor: function(socketName : string, id : number,state : boolean) : void {
+        ipcRenderer.send('identifieMonitorRequest',socketName,(state) ? id : 0);
+    },
+    blackoutMonitor: function(socketName : string,state : boolean) : void {
+        ipcRenderer.send('blackoutMonitorRequest',socketName,state);
+    },
+    setMonitorInterval: function(socketName : string,interval : number) : void {
+        ipcRenderer.send('intervalMonitorRequest',socketName,interval);
     },
 };
 
 contextBridge.exposeInMainWorld('link', linkApi);
 
-export interface LinkAPI {
-    send: (channel: string, data: any) => void,
-    on: (channel: string, func: (arg0: any) => any) => void,
-}
-  
-declare global {
-    interface Window {
-        link: LinkAPI
+interface DiscoverData {
+    addr: string,
+    data:{
+        port: number,
     }
 }

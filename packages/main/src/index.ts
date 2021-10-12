@@ -5,13 +5,9 @@ import {URL} from 'url';
 import Client from './client';
 import Host from './host';
 
-const isSingleInstance = app.requestSingleInstanceLock();
-let appState : Client | Host;
 
-if (!isSingleInstance) {
-  app.quit();
-  process.exit(0);
-}
+let appState : Client | Host;
+let mainWindow: BrowserWindow | null;
 
 app.disableHardwareAcceleration();
 
@@ -27,8 +23,6 @@ if (import.meta.env.MODE === 'development') {
     .catch(e => console.error('Failed install extension:', e));
 }
 
-let mainWindow: BrowserWindow | null = null;
-
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
     show: false, // Use 'ready-to-show' event to show window
@@ -39,11 +33,6 @@ const createWindow = async () => {
   });
   mainWindow.setMenuBarVisibility(false);
 
-  if(process.argv.includes('--viewer')) {
-    appState = new Client(mainWindow);
-  }else{
-    appState = new Host(mainWindow);
-  }
 
   /**
    * If you install `show: true` then it can cause issues when trying to close the window.
@@ -51,13 +40,12 @@ const createWindow = async () => {
    *
    * @see https://github.com/electron/electron/issues/25012
    */
-  mainWindow.on('ready-to-show', () => {
+   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
 
     if (import.meta.env.MODE === 'development') {
       mainWindow?.webContents.openDevTools();
     }
-    console.log(appState.name);
   });
 
   /**
@@ -71,16 +59,15 @@ const createWindow = async () => {
 
 
   await mainWindow.loadURL(pageUrl);
+
+  console.log(process.argv);
+
+  appState = (process.argv.includes('--viewer')) ? new Client(mainWindow) : new Host(mainWindow);
+
+  await appState.init();
+
 };
 
-
-app.on('second-instance', () => {
-  // Someone tried to run a second instance, we should focus our window.
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-  }
-});
 
 
 app.on('window-all-closed', () => {
