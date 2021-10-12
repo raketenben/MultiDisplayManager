@@ -24,6 +24,11 @@ const config = {
             arch: ['armv7l'],
         },
     },
+    win: {
+        target: [
+            { target: 'msi' },
+        ],
+    },
 };
 
 module.exports = config;

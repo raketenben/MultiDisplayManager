@@ -9,8 +9,6 @@ import Host from './host';
 let appState : Client | Host;
 let mainWindow: BrowserWindow | null;
 
-app.disableHardwareAcceleration();
-
 // Install "Vue.js devtools"
 if (import.meta.env.MODE === 'development') {
   app.whenReady()
@@ -68,19 +66,21 @@ const createWindow = async () => {
 
 };
 
-
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
+//enable hardware video decoding
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder');
+  app.commandLine.appendSwitch('enable-gpu-rasterization');
+}
 
 app.whenReady()
   .then(createWindow)
   .catch((e) => console.error('Failed create window:', e));
-
 
 // Auto-updates
 if (import.meta.env.PROD) {
