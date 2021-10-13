@@ -58,7 +58,6 @@
         "@types/bonjour": "^3.5.9",
         "@types/bootstrap": "^5.1.6",
         "@types/express": "^4.17.13",
-        "@types/socket.io-client": "^3.0.0",
         "@types/udp-discovery": "^2.0.1",
         "bonjour": "^3.5.0",
         "bootstrap": "^5.1.1",
