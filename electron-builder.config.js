@@ -21,7 +21,7 @@ const config = {
     linux: {
         target: {
             target: 'deb',
-            arch: ['armv7l'],
+            arch: 'armv7l',
         },
     },
     win: {
