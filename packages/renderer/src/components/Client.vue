@@ -203,6 +203,10 @@ class Error{
 </script>
 
 <style scoped>
+  * {
+    cursor:none;
+  }
+
   video, img {
     object-fit: contain;
     width:100%;

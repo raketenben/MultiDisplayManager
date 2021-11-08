@@ -10,6 +10,7 @@ class Client extends State {
         this.name = 'Client';
 
         //Maximize window for client
+        _win.maximize();
         _win.setFullScreen(true);
 
         return this;
