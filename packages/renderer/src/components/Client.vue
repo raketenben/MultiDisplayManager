@@ -147,7 +147,7 @@ export default defineComponent({
       }
     },
     videoEnded:function() : void {
-      if(this.files.length == 1){
+      if(this.files.length > 1){
         this.nextFile();
       }else{
         (this.$refs.videoContent as HTMLVideoElement).pause();
