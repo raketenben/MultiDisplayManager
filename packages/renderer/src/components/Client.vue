@@ -38,6 +38,7 @@
       <img 
         ref="imageContent" 
         class="d-none"
+        @load="imageLoaded"
       >
 
       <!-- Video -->
@@ -118,13 +119,6 @@ export default defineComponent({
 
             (this.$refs.imageContent as HTMLImageElement).setAttribute('src',url);
 
-            //make sure image is loaded before next file is queued
-            (this.$refs.imageContent as HTMLImageElement).addEventListener('load',() => {
-              //start timeout for next file
-              this.timeout = window.setTimeout(() => {
-                this.nextFile();
-              },this.interval);
-            });
 
             break;
           case 'video':
@@ -160,6 +154,13 @@ export default defineComponent({
         (this.$refs.videoContent as HTMLVideoElement).currentTime = 0;
         (this.$refs.videoContent as HTMLVideoElement).play();
       }
+    },
+    //make sure image is loaded before next file is queued
+    imageLoaded: function() : void{
+      //start timeout for next file
+      this.timeout = window.setTimeout(() => {
+        this.nextFile();
+      },this.interval);
     },
     setSocketListener:function() {
       if(!this.socket) return;
