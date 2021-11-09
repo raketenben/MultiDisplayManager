@@ -171,6 +171,8 @@ export default defineComponent({
           this.timeout = null;
         }
         //stop playing video
+        (this.$refs.videoContent as HTMLVideoElement).setAttribute('src','');
+        (this.$refs.videoContent as HTMLVideoElement).pause();
         
         this.files = _files;
         this.nextFile();
@@ -188,6 +190,7 @@ export default defineComponent({
       this.socket.on('disconnect',() => {
         console.info('Host disconnected');
         //clear all old values
+        (this.$refs.videoContent as HTMLVideoElement).setAttribute('src','');
         (this.$refs.videoContent as HTMLVideoElement).pause();
         //clear sockets
         this.socket = null;
