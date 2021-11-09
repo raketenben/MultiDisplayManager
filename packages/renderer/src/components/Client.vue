@@ -68,7 +68,7 @@ export default defineComponent({
       files: [] as string[],
       fileIndex: 0 as number,
       contentType: null as string | null,
-      interval: 2000 as number,
+      interval: 5000 as number,
       timeout: null as number | null,
       identifie: 0 as number,
       blackout: false as boolean,
