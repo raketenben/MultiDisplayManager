@@ -45,7 +45,7 @@
         ref="videoContent" 
         autoplay 
         class="d-none" 
-        @ended="nextFile"
+        @ended="videoEnded"
       />
     </div>
   </div>
@@ -114,18 +114,22 @@ export default defineComponent({
         switch(this.contentType){
           case 'image':
             (this.$refs.imageContent as HTMLImageElement).classList.remove('d-none');
-            (this.$refs.videoContent as HTMLImageElement).classList.add('d-none');
+            (this.$refs.videoContent as HTMLVideoElement).classList.add('d-none');
 
             (this.$refs.imageContent as HTMLImageElement).setAttribute('src',url);
 
-            this.timeout = window.setTimeout(() => {
-              this.nextFile();
-            },this.interval);
+            //make sure image is loaded before next file is queued
+            (this.$refs.imageContent as HTMLImageElement).addEventListener('load',() => {
+              //start timeout for next file
+              this.timeout = window.setTimeout(() => {
+                this.nextFile();
+              },this.interval);
+            });
 
             break;
           case 'video':
             (this.$refs.imageContent as HTMLImageElement).classList.add('d-none');
-            (this.$refs.videoContent as HTMLImageElement).classList.remove('d-none');
+            (this.$refs.videoContent as HTMLVideoElement).classList.remove('d-none');
 
             (this.$refs.videoContent as HTMLVideoElement).setAttribute('src',url);
             break;
@@ -148,13 +152,25 @@ export default defineComponent({
         this.fileIndex = 0;
       }
     },
+    videoEnded:function() : void {
+      if(this.files.length == 1){
+        this.nextFile();
+      }else{
+        (this.$refs.videoContent as HTMLVideoElement).pause();
+        (this.$refs.videoContent as HTMLVideoElement).currentTime = 0;
+        (this.$refs.videoContent as HTMLVideoElement).play();
+      }
+    },
     setSocketListener:function() {
       if(!this.socket) return;
       this.socket.on('filesPublished',(_files) => {
+        //clear timeouts
         if(this.timeout){
           clearTimeout(this.timeout);
           this.timeout = null;
         }
+        //stop playing video
+        
         this.files = _files;
         this.nextFile();
       });
@@ -171,6 +187,8 @@ export default defineComponent({
       this.socket.on('disconnect',() => {
         console.info('Host disconnected');
         //clear all old values
+        (this.$refs.videoContent as HTMLVideoElement).pause();
+        //clear sockets
         this.socket = null;
         this.files.splice(0,this.files.length);
         if(this.hostIndex !== null) this.hosts.splice(this.hostIndex,1);
