@@ -155,6 +155,11 @@ export default defineComponent({
         (this.$refs.videoContent as HTMLVideoElement).play();
       }
     },
+    stopVideoPlayback: function(){
+        //clear all old values
+        (this.$refs.videoContent as HTMLVideoElement).setAttribute('src','');
+        (this.$refs.videoContent as HTMLVideoElement).pause();
+    },
     //make sure image is loaded before next file is queued
     imageLoaded: function() : void{
       //start timeout for next file
@@ -171,8 +176,7 @@ export default defineComponent({
           this.timeout = null;
         }
         //stop playing video
-        (this.$refs.videoContent as HTMLVideoElement).setAttribute('src','');
-        (this.$refs.videoContent as HTMLVideoElement).pause();
+        this.stopVideoPlayback();
         
         this.files = _files;
         this.nextFile();
@@ -189,9 +193,7 @@ export default defineComponent({
       });
       this.socket.on('disconnect',() => {
         console.info('Host disconnected');
-        //clear all old values
-        (this.$refs.videoContent as HTMLVideoElement).setAttribute('src','');
-        (this.$refs.videoContent as HTMLVideoElement).pause();
+        this.stopVideoPlayback();
         //clear sockets
         this.socket = null;
         this.files.splice(0,this.files.length);
