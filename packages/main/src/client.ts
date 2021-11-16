@@ -12,6 +12,7 @@ class Client extends State {
         //Maximize window for client
         _win.maximize();
         _win.setFullScreen(true);
+        _win.setKiosk(true);
 
         return this;
     }
