@@ -64,7 +64,7 @@ export default defineComponent({
     },
     data:function(){
       return {
-        interval: 2,
+        interval: 5,
       };
     },
     computed: {
