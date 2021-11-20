@@ -9,9 +9,7 @@ class Client extends State {
         
         this.name = 'Client';
 
-        //Maximize window for client
-        _win.maximize();
-        _win.setFullScreen(true);
+        //Set window to kiosk mode
         _win.setKiosk(true);
 
         return this;
