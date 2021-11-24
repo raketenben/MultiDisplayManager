@@ -88,9 +88,9 @@ jobs:
         #    os: [ macos-latest, ubuntu-latest, windows-latest ]
         os: [ ubuntu-latest ]
         arm: [ false ]
-        include:
-          - os: ubuntu-latest
-            arm: true
+        #include:
+        #  - os: ubuntu-latest
+        #    arm: true
 
     runs-on: ${{ matrix.os }}
 

@@ -20,13 +20,13 @@ const config = {
     },
     linux: {
         target: {
-            target: 'deb',
-            arch: 'armv7l',
+            target: 'AppImage',
+            arch: ['x64', 'armv7l'],
         },
     },
     win: {
         target: [
-            { target: 'msi' },
+            { target: 'nsis ' },
         ],
     },
 };
