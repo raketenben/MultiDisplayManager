@@ -86,20 +86,12 @@ jobs:
       matrix:
         #    To compile the application for different platforms, use:
         #    os: [ macos-latest, ubuntu-latest, windows-latest ]
-        os: [ ubuntu-latest ]
-        arm: [ false ]
-        #include:
-        #  - os: ubuntu-latest
-        #    arm: true
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: ARM runner
-        uses: pguyot/arm-runner-action@v1.0.6
-        if: ${{ matrix.arm }}
 
       - uses: actions/setup-node@v2
         with:
