@@ -86,7 +86,7 @@ jobs:
       matrix:
         #    To compile the application for different platforms, use:
         #    os: [ macos-latest, ubuntu-latest, windows-latest ]
-        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest ]
 
     runs-on: ${{ matrix.os }}
 
