@@ -1,1 +1,3 @@
-Software for Streaming Video and Images to mutliple Displays over a Local network
+# MultiDisplayManager
+
+Secure Cross-plattform Slideshow Software for managing multiple network connected Displays.
