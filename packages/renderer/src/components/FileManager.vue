@@ -32,7 +32,7 @@
               class="progress m-1"
             >
               <div
-                class="progress-bar"
+                class="progress-bar bg-success"
                 role="progressbar"
                 :style="{width: `${uploadProgress}%` }"
                 aria-valuenow="25"
