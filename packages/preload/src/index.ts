@@ -16,7 +16,6 @@ const api: ElectronApi = {
  */
 contextBridge.exposeInMainWorld(apiKey, api);
 
-
 const linkApi = {
     //inmterface Type
     getInterfaceType: async function() : Promise<string> {
@@ -27,37 +26,121 @@ const linkApi = {
             });
         });
     },
-    onNewHost: function(callback : (newHost : DiscoverData) => void) : void {
-        ipcRenderer.send('availableHostUpdateRequest', true);
-        ipcRenderer.on('availableHostUpdateResponse',(event,host : DiscoverData) => {
-            callback(host);
+
+    /* host specific */
+    onAvailableClients: function(callback : (updatedClients : Map<string,Client>) => void) : void {
+        ipcRenderer.send('updateAvailableClients',true);
+        ipcRenderer.on('availableClientsUpdated',(event,clients : Map<string,Client>) => {
+            callback(clients);
         });
     },
-    onClientsUpdated: function(callback : (newHost : Map<string,string[]>) => void) : void {
-        ipcRenderer.send('availableClientUpdateRequest', true);
-        ipcRenderer.on('availableClientUpdateResponse',(event,client : Map<string,string[]>) => {
-            callback(client);
+    onPairableClients: function(callback : (updatedClients : Map<string,Client>) => void) : void {
+        ipcRenderer.send('updatePairableClients',true);
+        ipcRenderer.on('pairableClientsUpdated',(event,clients : Map<string,Client>) => {
+            callback(clients);
         });
     },
-    selectFiles: function(socketName : string) : void {
-        ipcRenderer.send('selectFilesForDisplayRequest',socketName);
+    onPairedClients: function(callback : (updatedClients : Map<string,Client>) => void) : void {
+        ipcRenderer.send('updatePairedClients',true);
+        ipcRenderer.on('pairedClientsUpdated',(event,clients : Map<string,Client>) => {
+            callback(clients);
+        });
     },
-    identifieMonitor: function(socketName : string, id : number,state : boolean) : void {
-        ipcRenderer.send('identifieMonitorRequest',socketName,(state) ? id : 0);
+
+
+    getFiles: function(hostName : string) : Promise<string[]> {
+        return ipcRenderer.invoke('getFiles',hostName);
     },
-    blackoutMonitor: function(socketName : string,state : boolean) : void {
-        ipcRenderer.send('blackoutMonitorRequest',socketName,state);
+    pairClient: function(clientName : string,key : string) : Promise<void> {
+        return ipcRenderer.invoke('pairClient',{clientName, key});
     },
-    setMonitorInterval: function(socketName : string,interval : number) : void {
-        ipcRenderer.send('intervalMonitorRequest',socketName,interval);
+    unpairClient: function(clientName : string) : Promise<void> {
+        return ipcRenderer.invoke('unpairClient',clientName);
+    },
+    getClientStatus: function(clientName : string) : Promise<boolean | null> {
+        return ipcRenderer.invoke('getClientStatus',clientName);
+    },
+    getClientFiles: function(clientName : string) : Promise<string[] | null> {
+        return ipcRenderer.invoke('getClientFiles',clientName);
+    },
+    reorderClientFiles: function(clientName : string,oldIndex : number,newIndex : number) : Promise<boolean> {
+        return ipcRenderer.invoke('reorderClientFiles',clientName,oldIndex,newIndex); 
+    },
+    deleteClientFile: function(clientName : string,index : number) : Promise<boolean> {
+        return ipcRenderer.invoke('deleteClientFile',clientName,index); 
+    },
+    uploadClientFiles: function(clientName : string) : Promise<boolean> {
+        return ipcRenderer.invoke('uploadClientFiles',clientName);
+    },
+    onUploadProgress: function(clientName : string,callback: (value : number) => void) : void {
+        ipcRenderer.on(`uploadProgressEvent-${clientName}`,(event,value) => {callback(value);});
+    },
+
+    updateClientInterval: function(clientName : string,interval : number) : Promise<boolean> {
+        return ipcRenderer.invoke('updateClientInterval',clientName,interval);
+    },
+    updateClientBlackout: function(clientName : string,blackout : boolean) : Promise<boolean> {
+        return ipcRenderer.invoke('updateClientBlackout',clientName,blackout);
+    },
+    updateClientIdentifie: function(clientName : string,identifie : number) : Promise<boolean> {
+        return ipcRenderer.invoke('updateClientIdentifie',clientName,identifie);
+    },
+
+    /*client specific*/
+    lock: function() : Promise<void> {
+        return ipcRenderer.invoke('lock');
+    },
+    unlock: function(password: string) : Promise<boolean> {
+        return ipcRenderer.invoke('unlock',password);
+    },
+    changePassword: function(oldPassword: string,newPassword: string) : Promise<boolean> {
+        return ipcRenderer.invoke('changePassword',oldPassword,newPassword);
+    },
+    getPairingKey: function(client : string) : Promise<string> {
+        return ipcRenderer.invoke('getPairingKey',client);
+    },
+    getDisplayName: function(client : string) : Promise<string> {
+        return ipcRenderer.invoke('getDisplayName',client);
+    },
+    setDisplayName: function(client : string) : Promise<string> {
+        return ipcRenderer.invoke('setDisplayName',client);
+    },
+
+    onBlackoutUpdated: function(callback : (blackout : boolean) => void) : void {
+        ipcRenderer.send('updateBlackout',true);
+        ipcRenderer.on('blackoutUpdated',(event,blackout : boolean) => {
+            callback(blackout);
+        });
+    },
+    onIdentifieUpdated: function(callback : (identifie : number) => void) : void {
+        ipcRenderer.send('updateIdentifie',true);
+        ipcRenderer.on('identifieUpdated',(event,identifie : number) => {
+            callback(identifie);
+        });
+    },
+
+    onDisplayFileUpdated: function(callback : (path : string,isImage : boolean) => void) : void {
+        ipcRenderer.send('updateDisplayFile',true);
+        ipcRenderer.on('displayFileUpdated',(event,path : string,isImage : boolean) => {
+            callback(path,isImage);
+        });
+    },
+
+    onDisplaySucessfullyPaired: function(callback : () => void) : void {
+        ipcRenderer.on('displaySucessfullyPaired',() => {
+            callback();
+        });
+    },
+
+    imageLoaded: function() : Promise<void> {
+        return ipcRenderer.invoke('imageLoaded');
+    },
+    loadError: function() : Promise<void> {
+        return ipcRenderer.invoke('loadError');
+    },
+    videoFinished: function() : Promise<void> {
+        return ipcRenderer.invoke('videoFinished');
     },
 };
 
 contextBridge.exposeInMainWorld('link', linkApi);
-
-interface DiscoverData {
-    addr: string,
-    data:{
-        port: number,
-    }
-}

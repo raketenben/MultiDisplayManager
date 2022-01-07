@@ -3,7 +3,6 @@
 </template>
 
 <script lang="ts">
-import '/@/../../../node_modules/bootstrap/scss/bootstrap.scss';
 
 import {defineComponent} from 'vue';
 

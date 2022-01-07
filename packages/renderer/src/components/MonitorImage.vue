@@ -1,8 +1,5 @@
 <template>
-  <img 
-    src="../../assets/screen.svg" 
-    :alt="`Monitor`"
-  >
+  <i class="bi bi-display" />
   <span> - {{ id }}</span>
 </template>
 
@@ -19,3 +16,9 @@ export default defineComponent({
     },
 });
 </script>
+
+<style scoped>
+    i, span {
+        font-size: 1.4em;
+    }
+</style>

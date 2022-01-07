@@ -1,16 +1,22 @@
 import type { BrowserWindow} from 'electron';
 
-import {Discovery} from 'udp-discovery';
+import bonjour from 'bonjour';
 
 class State{
+
     window! : BrowserWindow;
-    discoveryInstance! : Discovery;
     name!: string;
+
+    bonjourInstance : bonjour.Bonjour;
+
+    baseServiceName! : string;
 
     constructor(_win : BrowserWindow){
         this.window = _win;
+        
+        this.baseServiceName = 'multi-display-streamer';
 
-        this.discoveryInstance = new Discovery();
+        this.bonjourInstance = bonjour();
 
         return this;
     }

@@ -78,8 +78,8 @@ const setupMainPackageWatcher = (viteDevServer) => {
                 spawnProcess2 = null;
             }
 
-            spawnProcess = spawn(String(electronPath), ['.', '--viewer']);
-            spawnProcess1 = spawn(String(electronPath), ['.', '--viewer']);
+            spawnProcess = spawn(String(electronPath), ['.', '--viewer', '--savename=0']);
+            spawnProcess1 = spawn(String(electronPath), ['.', '--viewer', '--savename=1']);
             spawnProcess2 = spawn(String(electronPath), ['.']);
 
             spawnProcess.stdout.on('data', d => d.toString().trim() && logger.warn(d.toString(), { timestamp: true }));

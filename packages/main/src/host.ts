@@ -3,39 +3,30 @@ import {app, ipcMain,dialog } from 'electron';
 
 import State from './state';
 
-/*
-These modules seem to only work when included with require instead of import and with seperatley including the typescript definitions.
-If somebody knows a fix for this, please let me know.
-*/
-import type {Express} from 'express';
-const express = require('express');
+import ClientManager from './lib/clientManager';
+import RequestHelper from './lib/requestHelper';
 
-import type { Socket} from 'socket.io';
-import {Server} from 'socket.io';
+import type { RemoteService } from 'bonjour';
+import type bonjour from 'bonjour';
 
-import http from 'http';
+const FormData = require('form-data');
+
+import fs from 'fs';
 
 class Host extends State {
 
-    serviceName! : string;
-    servicePort! : number;
-    serviceAnnouncementInterval! : number;
+    clientManager : ClientManager;
+    requestHelper : RequestHelper;
 
-    socketInstance! : Server;
-    expressInstance! : Express;
-    httpServerInstance! : http.Server;
-
-    clients!: Map<string,string[]>;
+    browser! : bonjour.Browser;
 
     constructor(_win : BrowserWindow){
         super(_win);
 
         this.name = 'Host';
-        this.serviceName = 'MultiDisplayStreamerHost';
-        this.servicePort = 5091;
-        this.serviceAnnouncementInterval = 500;
 
-        this.clients = new Map();
+        this.clientManager = new ClientManager();
+        this.requestHelper = new RequestHelper(this.clientManager);
                 
         const isSingleInstance = app.requestSingleInstanceLock();
         if (!isSingleInstance) {
@@ -57,130 +48,248 @@ class Host extends State {
     override async init() : Promise<void> {
         await super.init();
 
-        this.publishServices();
+        /* init bonjour browser*/
+        this.browser = this.bonjourInstance.find({type:this.baseServiceName});
+        this.browser.on('up',this.handleServiceFound.bind(this));
+        this.browser.on('down',this.handleServiceLost.bind(this));
 
+        this.declareListener();
     }
 
-    publishServices() : void{
-        //new express instance
-        this.expressInstance = express();
-        ////alow access from any adress
-        this.expressInstance.use(function(req ,res, next) {
-            res.header('Access-Control-Allow-Origin', '*');
-            res.header('Cache-control', 'public, max-age=31536000');
-            next();
-        });
-
-        this.httpServerInstance = http.createServer(this.expressInstance);
-        
-        //start server for file publishing
-        this.httpServerInstance.listen(this.servicePort, () => {
-            console.log(`Ready and serving at ${this.servicePort}`);
-
-            //add socket server onto out http server
-            this.socketInstance = new Server(
-                this.httpServerInstance, 
-                { cors: 
-                    { origin: '*' },
-                },
-            );
-            this.addListeners();
-
-            //announce server to network
-            this.discoveryInstance.announce(
-                this.serviceName,
-                {port:this.servicePort},
-                this.serviceAnnouncementInterval,
-                true,
-            );
-        });
+    handleServiceFound(service : RemoteService) : void{
+        this.clientManager.clientFound(service);
     }
 
-    addListeners() : void{
-        /* socket.io */
-        this.socketInstance.on('connection',(socket : Socket) => {
+    handleServiceLost(service : RemoteService) : void{
+        this.clientManager.clientLost(service);
+    }
 
-            this.clients.set(socket.id,[]);
-
-            console.log(this.clients);
-
-            this.sendAvailableClientList();
-            socket.on('disconnect', () => {
-                this.clients.delete(socket.id);
-                this.sendAvailableClientList();
+    declareListener() : void {
+        ipcMain.handle('updateClientInterval',(event,clientName : string,value : number) => {
+            return new Promise((resolve,reject) => {
+                const path = `/api/interval/${value}`;
+                const request = this.requestHelper.request(clientName,path,{method:'POST'},true,(res) => {
+                    resolve(res.statusCode === 200);
+                });
+                request.on('error',reject);
+                request.end();
             });
         });
 
-        /* renderer */
-        ipcMain.on('availableClientUpdateRequest', () => {
-            this.sendAvailableClientList();
+        ipcMain.handle('updateClientBlackout',(event,clientName : string,value : boolean) => {
+            return new Promise((resolve,reject) => {
+                const path = `/api/blackout/${value.toString()}`;
+                const request = this.requestHelper.request(clientName,path,{method:'POST'},true,(res) => {
+                    resolve(res.statusCode === 200);
+                });
+                request.on('error',reject);
+                request.end();
+            });
+        });
+
+        ipcMain.handle('updateClientIdentifie',(event,clientName : string,value : number) => {
+            return new Promise((resolve,reject) => {
+                const path = `/api/identifie/${value.toString()}`;
+                const request = this.requestHelper.request(clientName,path,{method:'POST'},true,(res) => {
+                    resolve(res.statusCode === 200);
+                });
+                request.on('error',reject);
+                request.end();
+            });
+        });
+
+        ipcMain.handle('pairClient',async (e,{clientName,key}) : Promise<boolean> => {
+            return await this.clientManager.pairClient(clientName,key);
+        });
+        ipcMain.handle('unpairClient',async (e,clientName) : Promise<boolean> => {
+            return await this.clientManager.unpairClient(clientName);
+        });
+
+        ipcMain.handle('getClientStatus',async (e,clientName : string) : Promise<boolean> => {
+            let client = this.clientManager.getPairedClients().get(clientName);
+            if(!client) client = this.clientManager.getAvailableClients().get(clientName);
+            if(!client) return false;
+            return this.checkClientAvailable(client);
+        });
+
+        ipcMain.handle('getClientFiles',async (e,clientName : string) : Promise<null | string[]> => {
+            try {
+                return await this.getClientFiles(clientName);
+            } catch(e){
+                console.error(e);
+                return null;
+            }
+        });
+
+        ipcMain.handle('reorderClientFiles',async (e,clientName : string,oldIndex : number,newIndex : number) : Promise<boolean> => {
+            try {
+                return await this.reorderClientFiles(clientName,oldIndex,newIndex);
+            } catch(e){
+                console.error(e);
+                return false;
+            }
+        });
+
+        ipcMain.handle('deleteClientFile',async (e,clientName : string,index : number) : Promise<boolean> => {
+            try {
+                return await this.deleteClientFile(clientName,index);
+            } catch(e){
+                console.error(e);
+                return false;
+            }
+        });
+
+        ipcMain.handle('uploadClientFiles',async (e,clientName : string) : Promise<boolean> => {
+            try {
+                return await this.uploadFilesToClient(clientName);
+            } catch(e){
+                console.error(e);
+                return false;
+            }
+        });
+
+        //send list of available clients
+        ipcMain.on('updateAvailableClients',(e) => {
+            e.reply('availableClientsUpdated',this.clientManager.getAvailableClients());
+        });
+
+        //send list of paired clients
+        ipcMain.on('updatePairableClients',(e) => {
+            e.reply('pairableClientsUpdated',this.clientManager.getPairableClients());
         });
         
-        ipcMain.on('selectFilesForDisplayRequest', (event,socketName) => {
-            this.selectFiles().then((_files : string[]) => {
-                this.clients.set(socketName,_files);
-                this.sendAvailableClientList();
-                const publishedPaths = this.makeFilesAvailable(socketName,_files);
+        //send connected clients
+        ipcMain.on('updatePairedClients',(e) => {
+            e.reply('pairedClientsUpdated',this.clientManager.getPairedClients());
+        });
+
+        this.clientManager.emitter.on('availableClientsUpdated',(clients) => {
+            this.window.webContents.send('availableClientsUpdated',clients);
+        });
+        this.clientManager.emitter.on('pairedClientsUpdated',(clients) => {
+            this.window.webContents.send('pairedClientsUpdated',clients);
+        });
+        this.clientManager.emitter.on('pairableClientsUpdated',(clients) => {
+            this.window.webContents.send('pairableClientsUpdated',clients);
+        });
+    }
+
+    async checkClientAvailable(client : Client) : Promise<boolean> {
+        return new Promise((resolve) => {
+            const request = this.requestHelper.request(client,'/',{},false,(res) => {
+                resolve(res.statusCode === 200);
+            });
+            request.on('error',() => {
+                resolve(false);
+            });
+            request.end();
+        });
+    }
+
+    async getClientFiles(clientName : string) : Promise<string[]> {
+        return new Promise((resolve,reject) => {
+            const request = this.requestHelper.request(clientName,'/api/files',{},true,(res) => {
+                let data = '';
+                res.on('data',(chunk) => {
+                    data += chunk;
+                });
+                res.on('end',() => {
+                    if(res.statusCode === 200) {
+                        return resolve(JSON.parse(data));
+                    } else {
+                        return reject(new Error('Could not get client files'));
+                    }
+                });
+            });
+            request.on('error',(e) => {
+                return reject(e);
+            });
+            request.end();
+        });
+    }
+
+    async reorderClientFiles(clientName : string,oldIndex : number,newIndex : number) : Promise<boolean> {
+        return new Promise((resolve,reject) => {
+            const path = `/api/files/reorder/${oldIndex}/${newIndex}`;
+            const request = this.requestHelper.request(clientName,path,{method:'POST'},true,(res) => {
+                if(res.statusCode === 200) {
+                    return resolve(true);
+                } else {
+                    return reject(new Error('Could not reorder client files'));
+                }
+            });
+            request.on('error',(e) => {
+                return reject(e);
+            });
+            request.end();
+        });
+    }
+
+    async deleteClientFile(clientName : string,index:number) : Promise<boolean> {
+        return new Promise((resolve,reject) => {
+            const path = `/api/files/${index}`;
+            const request = this.requestHelper.request(clientName,path,{method:'DELETE'},true,(res) => {
+                if(res.statusCode === 200) {
+                    return resolve(true);
+                } else {
+                    return reject(new Error('Could not delete client file'));
+                }
+            });
+            request.on('error',(e) => {
+                return reject(e);
+            });
+            request.end();
+        });
+    }
+
+    async uploadFilesToClient(clientName : string) : Promise<boolean> {
+        return new Promise((resolve,reject) => {
+            this.selectFiles().then((files) => {
+                let uploaded = 0;
+                const formData = new FormData();
+                for(const file of files) {
+                    formData.append('files',fs.createReadStream(file));
+                }
+                const options = {
+                    method:'POST',
+                    headers:formData.getHeaders(),
+                };
+                const request = this.requestHelper.request(clientName,'/api/files',options,true,(res) => {
+                    if(res.statusCode === 200) {
+                        return resolve(true);
+                    } else {
+                        return reject(new Error('Could not upload files to client'));
+                    }
+                });
+                request.on('error',reject);
+
+                formData.on('data',(chunk : Buffer) => {
+                    formData.getLength((e : Error,length : number) => {
+                        uploaded += chunk.length;
+                        const progress = Math.round((uploaded / length)*1000)/10;
+                        this.window.webContents.send(`uploadProgressEvent-${clientName}`,progress);
+                    });
+                });
                 
-                const targetClient = this.socketInstance.to(socketName);
-                targetClient.emit('filesPublished', publishedPaths);
-            },() => {
-                this.window.webContents.send('errorResponse','File selection failed');
+                formData.pipe(request);
+
+
+            }).catch((e) => {
+                reject(e);
             });
         });
-
-        ipcMain.on('identifieMonitorRequest', (event,socketName,state) => {
-            const targetClient = this.socketInstance.to(socketName);
-            targetClient.emit('identifie', state);
-        });
-        ipcMain.on('blackoutMonitorRequest', (event,socketName,state) => {
-            const targetClient = this.socketInstance.to(socketName);
-            targetClient.emit('blackout', state);
-        });
-        ipcMain.on('intervalMonitorRequest', (event,socketName,interval) => {
-            const targetClient = this.socketInstance.to(socketName);
-            targetClient.emit('interval', interval);
-        });
-
-        /*window events*/
-        this.window.on('close',() => {
-            this.socketInstance.disconnectSockets(true);
-        });
-    }
-
-    sendAvailableClientList() : void {
-        this.window.webContents.send('availableClientUpdateResponse',this.clients);
     }
 
     async selectFiles() : Promise<string[]>{
         return new Promise(function(res,rej){
-            dialog.showOpenDialog({properties: ['openFile','multiSelections'] }).then(function (response) {
+            dialog.showOpenDialog({properties:['openFile','multiSelections'] }).then(function (response) {
                 if (!response.canceled) {
                     res(response.filePaths);
                 } else {
-                    rej();
+                    rej(new Error('No files selected'));
                 }
             });
         });
-    }
-
-    //make an array of files available
-    makeFilesAvailable(socketName : string, paths : string[]) : string[] {
-        return paths.map(
-            (path : string) => {
-                return this.makeFileAvailable(socketName,path);
-            },
-        );
-    }
-
-    //make a specific file available via http
-    makeFileAvailable(socketName : string, path : string) : string {
-        const randomPublishName = Math.random().toString(36).substring(8);
-        const servePath = `/${socketName}/${randomPublishName}`;
-        this.expressInstance.get(servePath, function(req, res) {
-            res.sendFile(path);
-        });
-        return randomPublishName;
     }
 }
 
