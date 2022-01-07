@@ -66,6 +66,7 @@
         "bonjour": "^3.5.0",
         "bootstrap": "^5.1.1",
         "bootstrap-icons": "^1.7.2",
+        "crc": "^4.1.0",
         "electron-store": "^8.0.1",
         "electron-updater": "4.6.0",
         "express": "^4.17.1",
