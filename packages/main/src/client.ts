@@ -107,23 +107,7 @@ class Client extends State {
             res.send('OK');
         });
 
-        const api = express.Router();
-        this.expressInstance.use('/api',api);
-
-        //key check
-        api.use((req, res, next) => {
-            //TODO: add api key check
-            const token = req.headers.authorization?.split(' ')[1] || null;
-            if(!token) return res.status(401).send('Unauthorized');
-            if(!this.authTokens.includes(token)) return res.status(401).send('Unauthorized');
-            next();
-        });
-
-        api.get('/',(req,res) => {
-            res.send('OK');
-        });
-
-        api.post('/pair',(req,res) => {
+        this.expressInstance.post('/pair',(req,res) => {
             if(this.pairingMode){
                 let data = '';
                 req.on('data', chunk => {
@@ -145,6 +129,22 @@ class Client extends State {
             }else{
                 res.status(403).send('Pairing mode disabled');
             }
+        });
+
+        const api = express.Router();
+        this.expressInstance.use('/api',api);
+
+        //key check
+        api.use((req, res, next) => {
+            //TODO: add api key check
+            const token = req.headers.authorization?.split(' ')[1] || null;
+            if(!token) return res.status(401).send('Unauthorized');
+            if(!this.authTokens.includes(token)) return res.status(401).send('Unauthorized');
+            next();
+        });
+
+        api.get('/',(req,res) => {
+            res.send('OK');
         });
         
         api.post('/interval/:value',(req,res) => {
@@ -287,8 +287,9 @@ class Client extends State {
         this.updateDisplayFile();
     }
 
-    updateDisplayFile() : void {
-        const filePath = this.fileManager.getFilePath(this.fileIndex);
+    async updateDisplayFile() : Promise<void> {
+        const filePath = await this.fileManager.getFilePath(this.fileIndex);
+        if(!filePath) return;
         const mimeType = mime.lookup(filePath.fileName);
         if(!mimeType) return this.nextFile();
         const isImage = mimeType.startsWith('image/') ? true : (mimeType.startsWith('video/') ? false : undefined);

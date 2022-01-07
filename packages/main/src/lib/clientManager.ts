@@ -214,12 +214,13 @@ class ClientManager {
             };
 
             //send pair request
-            const request = this.requestHelper.request(client,'/api/pair',options,true,(res) => {
+            const request = this.requestHelper.request(client,'/pair',options,true,(res) => {
                 let token = '';
                 res.on('data',(data) => {
                     token += data;
                 });
                 res.on('end',() => {
+                    console.log(`Pairing token: ${token}`,res.statusCode);
                     if(res.statusCode === 200) {
                         this.addPairedClient(client,cert,token);
                         resolve(true);

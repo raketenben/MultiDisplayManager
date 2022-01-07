@@ -43,7 +43,7 @@ class FileManager {
 
     async getFile(index : number) : Promise<ReadStream | null>{
         const file = this.files[index];
-        if(!file) return null;
+        if(!file?.diskname) return null;
         const fileSavePath = path.join(this.getFileSavePath(),file.diskname);
         return fs.createReadStream(fileSavePath);
     }
@@ -101,9 +101,11 @@ class FileManager {
     async getFiles() : Promise<string[]> {
         return this.files.map(f => f.fileName);
     }
-    getFilePath(i : number) : {diskPath:string,fileName:string} {
+
+    async getFilePath(i : number) : Promise<{diskPath:string,fileName:string} | null> {
         const savePath = this.getFileSavePath();
         const fileProtocol = 'file://';
+        if(!this.files[i]?.diskname) return null;
         return {diskPath:`${fileProtocol}${path.join(savePath,this.files[i].diskname)}`,fileName:this.files[i].fileName};
     }
 
