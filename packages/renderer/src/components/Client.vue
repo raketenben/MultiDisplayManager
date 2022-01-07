@@ -1,235 +1,387 @@
 <template>
+  <!-- pair code modal -->
+  <div 
+    ref="pairingModal"
+    class="modal fade"
+    role="dialog"
+  >
+    <div class="modal-dialog modal-mg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Pairing Key:
+          </h5>
+        </div>
+        <div class="modal-body d-flex flex-column align-items-center">
+          <h1>{{ pairingKey }}</h1>
+          <h5>Name: {{ displayName }}</h5>
+          <div class="d-flex flex-row">
+            <button 
+              type="button"
+              class="btn btn-success m-1"
+              @click="setPassword"
+            >
+              Set Password
+            </button>
+            <button 
+              type="button"
+              class="btn btn-primary m-1"
+              @click="setDisplayName"
+            >
+              Set Name
+            </button>
+            <button 
+              type="button"
+              class="btn btn-danger m-1"
+              @click="exitPairing"
+            >
+              Exit Pairing Mode
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- unlock modal -->
+  <div 
+    ref="unlockModal"
+    class="modal fade"
+    role="dialog"
+  >
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Unlock
+          </h5>
+        </div>
+        <div class="modal-body d-flex flex-column align-items-center">
+          <form
+            class="d-flex flex-column"
+            @action="unlockSubmit"
+          >
+            <div class="form-group d-flex flex-column">
+              <label for="password">Password</label>
+              <input
+                id="password" 
+                v-model="password"
+                type="password"
+                class="m-1"
+              >
+              <button
+                class="btn btn-success m-1"
+                @click="unlockSubmit"
+              >
+                Unlock
+              </button>
+              <span
+                v-if="unlockResult === false"
+                class="text-danger m-1"
+              > 
+                Wrong Password 
+              </span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+  <!-- set password modal -->
+  <div 
+    ref="setPasswordModal"
+    class="modal fade"
+    role="dialog"
+  >
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Set Password:
+          </h5>
+          <button 
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close" 
+          />
+        </div>
+        <div class="modal-body d-flex flex-column align-items-center">
+          <div class="form-group d-flex flex-column">
+            <form
+              class="d-flex flex-column"
+              @submit="changePasswordSubmit"
+            >
+              <label
+                for="password"
+                class="m-1"
+              >Old Password</label>
+              <input
+                id="password" 
+                v-model="oldPassword" 
+                type="password" 
+                class="form-control"
+              >
+              <label
+                for="password"
+                class="m-1"
+              >New Password</label>
+              <input 
+                id="password" 
+                v-model="newPassword" 
+                type="password" 
+                class="form-control"
+              >
+              <button 
+                type="button"
+                class="btn btn-success m-1"
+                @click="changePasswordSubmit"
+              >
+                Set Password
+              </button>
+              <span
+                v-if="passwordSetResult === false"
+                class="text-danger"
+              >
+                Password set failed
+              </span>
+              <span
+                v-if="passwordSetResult === true"
+                class="text-success"
+              >
+                Password changed successfully
+              </span>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- set name modal -->
+  <div 
+    ref="displayNameModal"
+    class="modal fade"
+    role="dialog"
+  >
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Set display name
+          </h5>
+          <button 
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close" 
+          />
+        </div>
+        <div class="modal-body d-flex flex-column align-items-center">
+          <div class="form-group">
+            <form
+              class="d-flex flex-column"
+              @submit="setDisplaySubmit"
+            >
+              <label for="password">Display Name</label>
+              <input
+                id="password" 
+                v-model="displayName" 
+                type="text" 
+                class="form-control"
+                pattern="[a-zA-Z0-9-_]{1,64}"
+                maxlength="64"
+              >
+              <button 
+                type="button"
+                class="btn btn-success m-1"
+                @click="setDisplaySubmit"
+              >
+                Update
+              </button>
+              <span
+                v-if="displayNameSetResult === true"
+                class="text-success"
+              >
+                Display name changed successfully
+              </span>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="h-100 d-flex flex-column bg-black text-white justify-content-center">
-    <!--iterator for displaying errors-->
-    <div 
-      v-for="error in errors"
-      :key="error.text"
-      class="alert alert-danger" 
-      role="alert"
+    <!-- screen identifier and blackout -->
+    <h1 
+      class="identifie"
+      :class="{blackout:blackout}"
     >
-      <p>{{ error.text }}</p>
-    </div>
+      {{ (identifie == 0) ? '' : identifie }}
+    </h1>
 
-    <!--show waiting message as long as no host is found-->
-    <div 
-      v-if="!host" 
-      class="align-self-center justify-self-center d-flex flex-column align-items-center"
+    <!-- Image -->
+    <img 
+      ref="imageContent"
+      :class="{'d-none': isImage === false}"
+      @load="imageLoaded"
+      @error="loadError"
     >
-      <span>Waiting for Host...</span>
-      <div 
-        class="spinner-border m-2" 
-        role="status"
-      />
-    </div>
 
-    <div 
-      v-else 
-      class="h-100"
-    > 
-      <!-- screen identifier and blackout -->
-      <h1 
-        class="identifie"
-        :class="{blackout:blackout}"
-      >
-        {{ (identifie == 0) ? '' : identifie }}
-      </h1>
-
-      <!-- Image -->
-      <img 
-        ref="imageContent" 
-        class="d-none"
-        @load="imageLoaded"
-      >
-
-      <!-- Video -->
-      <video 
-        ref="videoContent" 
-        autoplay 
-        class="d-none" 
-        @ended="videoEnded"
-      />
-    </div>
+    <!-- Video -->
+    <video 
+      ref="videoContent" 
+      autoplay
+      :class="{'d-none': isImage === true}"
+      @ended="videoEnded"
+      @error="loadError"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import {defineComponent} from 'vue';
 
-import type {Socket} from 'socket.io-client';
-import io from 'socket.io-client';
+import * as bootstrap from 'bootstrap';
 
 export default defineComponent({
   name: 'Client',
   data: function(){
     return {
-      errors: [] as Error[],
-      socket: null as Socket | null,
-      hosts: [] as DiscoveryData[],
-      files: [] as string[],
-      fileIndex: 0 as number,
-      contentType: null as string | null,
-      interval: 5000 as number,
-      timeout: null as number | null,
+      pairingKey: '------',
+      displayName: '',
+
+      password: '',
+      oldPassword: '',
+      newPassword: '',
+
+      unlockResult: null as boolean | null,
+      passwordSetResult: null as boolean | null,
+      displayNameSetResult: null as boolean | null,
+
+      setPasswordModal: null as bootstrap.Modal | null,
+      unlockModal: null as bootstrap.Modal | null,
+      pairingModal: null as bootstrap.Modal | null,
+      displayNameModal: null as bootstrap.Modal | null,
+
+      isImage: false as boolean,
+
       identifie: 0 as number,
       blackout: false as boolean,
     };
   },
-  computed:{
-    hostIndex: function(){
-      if(this.hosts.length == 0) return null;
-      return 0;
-    },
-    host:function() : DiscoveryData | null {
-      if(this.hostIndex === null) return null;
-      return this.hosts[this.hostIndex];
-    },
-    currentURL:function() : string | null {
-      //make sure all required values are present
-      if(!this.host || !this.socket || !this.currentFile) return null;
-      return `http://${this.host.addr}:${this.host.data.port}/${this.socket.id}/${this.currentFile}`;
-    },
-    currentFile:function() : string | null {
-      if(this.files.length < this.fileIndex) return null;
-      return this.files[this.fileIndex];
-    },
-  },
-  watch:{
-    hostIndex:function(){
-      if(!this.host){
-        if(this.socket != null)
-        this.socket.disconnect();
-        this.socket = null;
-        return;
+  mounted:function(){
+    this.pairingModal = new bootstrap.Modal(this.$refs.pairingModal as HTMLElement,{backdrop: 'static'});
+    this.setPasswordModal = new bootstrap.Modal(this.$refs.setPasswordModal as HTMLElement);
+    this.unlockModal = new bootstrap.Modal(this.$refs.unlockModal as HTMLElement);
+    this.displayNameModal = new bootstrap.Modal(this.$refs.displayNameModal as HTMLElement);
+
+    window.addEventListener('keydown',(e) => {
+      if(e.key == 'Escape') this.onEscape();
+    });
+
+    window.link.getDisplayName().then((name) => {
+      this.displayName = name;
+    });
+
+    window.link.onBlackoutUpdated((blackout) => {
+      this.blackout = blackout;
+    });
+    window.link.onIdentifieUpdated((identifie) => {
+      this.identifie = identifie;
+    });
+
+    window.link.onDisplaySucessfullyPaired(() => {
+      this.exitPairing();
+    });
+
+    window.link.onDisplayFileUpdated((filePath,isImage) => {
+      (this.$refs.videoContent as HTMLVideoElement).pause();
+      (this.$refs.videoContent as HTMLVideoElement).currentTime = 0;
+
+      this.isImage = isImage;
+
+      if(isImage === true){
+        (this.$refs.imageContent as HTMLImageElement).setAttribute('src',filePath);
+      }else if(isImage === false){
+        (this.$refs.videoContent as HTMLVideoElement).setAttribute('src',filePath);
+        (this.$refs.videoContent as HTMLVideoElement).play();
       }
-      let hostSocketAddress = `ws://${this.host.addr}:${this.host.data.port}`;
-      this.socket = io(hostSocketAddress);
-      this.setSocketListener();
-    },
-    currentURL:function(){
-      if(!this.currentURL) return;
-      let url = this.currentURL;
-      fetch(url,{method:'HEAD'}).then((response) => {
-        let contentType = response.headers.get('Content-Type')?.split('/')[0];
-        this.contentType = (!contentType) ? null : contentType;
-
-        switch(this.contentType){
-          case 'image':
-            (this.$refs.imageContent as HTMLImageElement).classList.remove('d-none');
-            (this.$refs.videoContent as HTMLVideoElement).classList.add('d-none');
-
-            (this.$refs.imageContent as HTMLImageElement).setAttribute('src',url);
-
-
-            break;
-          case 'video':
-            (this.$refs.imageContent as HTMLImageElement).classList.add('d-none');
-            (this.$refs.videoContent as HTMLVideoElement).classList.remove('d-none');
-
-            (this.$refs.videoContent as HTMLVideoElement).setAttribute('src',url);
-            break;
-          default:
-            this.nextFile();
-        }
-      });
-    },
-  },
-  created: function(){
-    window.link.onNewHost((newHost) => {
-      this.hosts.push(newHost);
     });
   },
   methods:{
-    nextFile:function() : void {
-      if(this.fileIndex < this.files.length-1){
-        this.fileIndex++;
-      }else{
-        this.fileIndex = 0;
-      }
-    },
     videoEnded:function() : void {
-      if(this.files.length > 1){
-        this.nextFile();
-      }else{
-        (this.$refs.videoContent as HTMLVideoElement).pause();
-        (this.$refs.videoContent as HTMLVideoElement).currentTime = 0;
-        (this.$refs.videoContent as HTMLVideoElement).play();
-      }
+      (this.$refs.videoContent as HTMLVideoElement).currentTime = 0;
+      window.link.videoFinished();
     },
-    stopVideoPlayback: function(){
-        //clear all old values
-        (this.$refs.videoContent as HTMLVideoElement).setAttribute('src','');
-        (this.$refs.videoContent as HTMLVideoElement).pause();
+    imageLoaded:function() : void {
+      window.link.imageLoaded();
     },
-    //make sure image is loaded before next file is queued
-    imageLoaded: function() : void{
-      //start timeout for next file
-      this.timeout = window.setTimeout(() => {
-        this.nextFile();
-      },this.interval);
+    loadError:function() : void {
+      window.link.loadError();
     },
-    setSocketListener:function() {
-      if(!this.socket) return;
-      this.socket.on('filesPublished',(_files) => {
-        //clear timeouts
-        if(this.timeout){
-          clearTimeout(this.timeout);
-          this.timeout = null;
+
+    onEscape:function() : void {
+        window.link.unlock('').then((unlocked) => {
+          if(unlocked){
+            if(this.pairingModal) this.pairingModal.show();
+            this.updatePairingKey();
+          }else{
+            if(this.unlockModal) this.unlockModal.show();
+          }
+        });
+    },
+    updatePairingKey:function() : void {
+      window.link.getPairingKey().then((key) => {
+        this.pairingKey = key;
+      });
+    },
+    exitPairing:function() : void {
+      //TODO: make sure this is the correct way to exit pairing
+      if(this.unlockModal) this.unlockModal.hide();
+      if(this.pairingModal) this.pairingModal.hide();
+      if(this.setPasswordModal) this.setPasswordModal.hide();
+
+      window.link.lock();
+    },
+    setPassword:function() : void {
+      if(this.setPasswordModal) this.setPasswordModal.show();
+    },
+    setDisplayName:function() : void {
+      if(this.displayNameModal) this.displayNameModal.show();
+    },
+    changePasswordSubmit:function() : void {
+      window.link.changePassword(this.oldPassword,this.newPassword).then((success) => {
+          this.passwordSetResult = success;
+          this.oldPassword = '';
+          this.newPassword = '';
+      });
+    },
+    unlockSubmit:function(e : Event) : void {
+      e.preventDefault();
+      window.link.unlock(this.password).then((unlocked) => {
+        if(unlocked){
+          if(this.unlockModal) this.unlockModal.hide();
+          if(this.pairingModal) this.pairingModal.show();
+          this.updatePairingKey();
+          this.unlockResult = true;
+        }else{
+          this.unlockResult = false;
         }
-        //stop playing video
-        this.stopVideoPlayback();
-        
-        this.files = _files;
-        this.nextFile();
+        this.password = '';
       });
-      this.socket.on('interval',(value) => {
-        this.interval = value*1000;
-        console.log(this.interval);
-      });
-      this.socket.on('identifie',(value) => {
-        this.identifie = value;
-      });
-      this.socket.on('blackout',(value) => {
-        this.blackout = value;
-      });
-      this.socket.on('disconnect',() => {
-        console.info('Host disconnected');
-        this.stopVideoPlayback();
-        //clear sockets
-        this.socket = null;
-        this.files.splice(0,this.files.length);
-        if(this.hostIndex !== null) this.hosts.splice(this.hostIndex,1);
-      });
-      this.socket.on('error',(err) => {
-        this.errors.push(new Error(err));
-        this.socket = null;
+    },
+    setDisplaySubmit:function(e : Event) : void {
+      e.preventDefault();
+      window.link.setDisplayName(this.displayName).then((success) => {
+        this.displayNameSetResult = success;
       });
     },
   },
 });
 
-interface DiscoveryData {
-  addr : string,
-  data:{
-      port: number,
-  }
-}
-
-class Error{
-  text! : string;
-
-  constructor (_text : string) {
-    this.text = _text;
-
-    return this;
-  }
-}
-
 </script>
 
 <style scoped>
-  * {
-    cursor:none;
-  }
 
   video, img {
     object-fit: contain;
@@ -262,5 +414,8 @@ class Error{
 
   .blackout {
     background: black;
+  }
+  .modal {
+    color: #000;
   }
 </style>

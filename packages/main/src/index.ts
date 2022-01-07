@@ -2,29 +2,25 @@ import {app, BrowserWindow} from 'electron';
 import {join} from 'path';
 import {URL} from 'url';
 
+import {autoUpdater} from 'electron-updater';
+
+
+import fs from 'fs';
+import InstanceHelper from './lib/instanceHelper';
+
 import Client from './client';
 import Host from './host';
-
 
 let appState : Client | Host;
 let mainWindow: BrowserWindow | null;
 
-// Install "Vue.js devtools"
-if (import.meta.env.MODE === 'development') {
-  app.whenReady()
-    .then(() => import('electron-devtools-installer'))
-    .then(({default: installExtension, VUEJS3_DEVTOOLS}) => installExtension(VUEJS3_DEVTOOLS, {
-      loadExtensionOptions: {
-        allowFileAccess: true,
-      },
-    }))
-    .catch(e => console.error('Failed install extension:', e));
-}
 
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
     show: false, // Use 'ready-to-show' event to show window
     webPreferences: {
+      devTools: (import.meta.env.MODE === 'development'),
+      webSecurity: (import.meta.env.MODE !== 'development'),
       nativeWindowOpen: true,
       preload: join(__dirname, '../../preload/dist/index.cjs'),
     },
@@ -58,8 +54,6 @@ const createWindow = async () => {
 
   await mainWindow.loadURL(pageUrl);
 
-  console.log(process.argv);
-
   appState = (process.argv.includes('--viewer')) ? new Client(mainWindow) : new Host(mainWindow);
 
   await appState.init();
@@ -82,11 +76,36 @@ app.whenReady()
   .then(createWindow)
   .catch((e) => console.error('Failed create window:', e));
 
-// Auto-updates
-if (import.meta.env.PROD) {
+// Install "Vue.js devtools"
+if (import.meta.env.MODE === 'development') {
   app.whenReady()
-    .then(() => import('electron-updater'))
-    .then(({autoUpdater}) => autoUpdater.checkForUpdatesAndNotify())
-    .catch((e) => console.error('Failed check updates:', e));
+    .then(() => import('electron-devtools-installer'))
+    .then(({default: installExtension, VUEJS3_DEVTOOLS}) => installExtension(VUEJS3_DEVTOOLS, {
+      loadExtensionOptions: {
+        allowFileAccess: true,
+      }, 
+    }))
+    .catch(e => console.error('Failed install extension:', e));
 }
 
+// Auto-updates
+if (import.meta.env.PROD) {
+  if(!process.argv.includes('--viewer')){
+    autoUpdater.checkForUpdatesAndNotify();
+  }else{
+    autoUpdater.autoDownload = true;
+    autoUpdater.checkForUpdates();
+    autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+      console.log('Update downloaded');
+      console.log(releaseNotes,releaseName);
+      autoUpdater.quitAndInstall();
+    });
+  }
+} 
+
+//error logging
+process.on('uncaughtException', function (error) {
+  const errorFilePath = join(InstanceHelper.getInstanceSavePath(),'error.log');
+  const data = `${new Date().toISOString()} ${error.message}\n${error.stack}\n\n`;
+  fs.appendFileSync(errorFilePath,data);
+});
