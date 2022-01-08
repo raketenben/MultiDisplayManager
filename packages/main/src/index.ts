@@ -98,7 +98,9 @@ if (import.meta.env.PROD) {
     autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
       console.log('Update downloaded');
       console.log(releaseNotes,releaseName);
-      autoUpdater.quitAndInstall();
+      if(process.env.DESKTOPINTEGRATION === 'AppImageLauncher') {
+        process.env.APPIMAGE = process.env.ARGV0;
+      }
     });
   }
 } 
