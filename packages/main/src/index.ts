@@ -11,6 +11,8 @@ import InstanceHelper from './lib/instanceHelper';
 import Client from './client';
 import Host from './host';
 
+import * as shutdown from 'electron-shutdown-command';
+
 let appState : Client | Host;
 let mainWindow: BrowserWindow | null;
 
@@ -98,9 +100,14 @@ if (import.meta.env.PROD) {
     autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
       console.log('Update downloaded');
       console.log(releaseNotes,releaseName);
+
+      if(process.argv.includes('--rebootAfterUpdate')) shutdown.reboot({timerseconds:60});
+
       if(process.env.DESKTOPINTEGRATION === 'AppImageLauncher') {
         process.env.APPIMAGE = process.env.ARGV0;
       }
+
+      autoUpdater.quitAndInstall(true,process.argv.includes('--restartAfterUpdate'));
     });
   }
 } 
