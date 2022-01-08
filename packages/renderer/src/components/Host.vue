@@ -2,7 +2,7 @@
   <nav 
     class="navbar bg-light p-2"
   >
-    <div class="container-fluid justify-content-start">
+    <div class="justify-content-between">
       <!-- blackout the screens -->
       <button 
         class="btn navbar-light btn-primary m-2"
@@ -32,18 +32,18 @@
           class="bi bi-x-circle" 
         />
       </button>
-
-      <!-- pairing modal -->
-      <button 
-        type="button"
-        class="btn navbar-light btn-primary m-2"
-        data-bs-toggle="modal"
-        data-bs-target="#pairingModal"
-      >
-        <i class="bi bi-link" />
-        Devices
-      </button>
     </div>
+
+    <!-- pairing modal -->
+    <button 
+      type="button"
+      class="btn navbar-light btn-primary m-2"
+      data-bs-toggle="modal"
+      data-bs-target="#pairingModal"
+    >
+      <i class="bi bi-link" />
+      Devices
+    </button>
   </nav>
 
   <acm 
