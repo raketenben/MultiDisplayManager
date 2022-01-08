@@ -265,7 +265,7 @@ export default defineComponent({
 
       isImage: false as boolean,
 
-      identifie: 0 as number,
+      identifie: 19 as number,
       blackout: false as boolean,
     };
   },
