@@ -1,4 +1,5 @@
 import type { BrowserWindow} from 'electron';
+import {app} from 'electron';
 import { ipcMain} from 'electron';
 import State from './state';
 
@@ -78,9 +79,8 @@ class Client extends State {
     override async init() : Promise<void> {
         await super.init();
         
-        this.window.on('close',async (e) =>{
+        app.on('before-quit',() => {
             if(this.bonjourService?.published){
-                e.preventDefault();
                 this.bonjourService?.stop(() => {
                     this.window.close();
                 });
