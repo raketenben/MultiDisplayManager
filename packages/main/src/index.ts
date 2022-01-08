@@ -90,8 +90,17 @@ if (import.meta.env.MODE === 'development') {
 
 // Auto-updates
 if (import.meta.env.PROD) {
-  autoUpdater.autoDownload = true;
-  autoUpdater.checkForUpdatesAndNotify();
+  if(!process.argv.includes('--viewer')){
+    autoUpdater.checkForUpdatesAndNotify();
+  }else{
+    autoUpdater.autoDownload = true;
+    autoUpdater.checkForUpdates();
+    autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+      console.log('Update downloaded');
+      console.log(releaseNotes,releaseName);
+      autoUpdater.quitAndInstall();
+    });
+  }
 } 
 
 //error logging
