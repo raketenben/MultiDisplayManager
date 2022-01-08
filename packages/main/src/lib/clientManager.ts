@@ -34,9 +34,10 @@ class ClientManager {
         this.clientCerts = new Map(JSON.parse(this.store.get('certs','[]') as string));
         this.clientTokens = new Map(JSON.parse(this.store.get('tokens','[]') as string));
 
-        /* reset availability of clients */
-        this.pairedClients.forEach((client) => {
-            client.available = false;
+        /* check availability of clients */
+        this.pairedClients.forEach(async (client) => {
+            client.available = await this.checkClientAvailable(client);
+            this.emitPairedClientsUpdated();
         });
 
         this.pairableClients = new Map();
@@ -45,6 +46,18 @@ class ClientManager {
         this.requestHelper = new RequestHelper(this);
         
         this.emitPairedClientsUpdated();
+    }
+
+    private async checkClientAvailable(client : Client) : Promise<boolean> {
+        return new Promise((resolve) => {
+            const request = this.requestHelper.request(client,'',{},true,() => {
+                resolve(true);
+            });
+            request.on('error',() => {
+                resolve(false);
+            });
+            request.end();
+        });
     }
 
     private savePairedClients() : void {
