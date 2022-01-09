@@ -4,14 +4,11 @@ import {URL} from 'url';
 
 import {autoUpdater} from 'electron-updater';
 
-
 import fs from 'fs';
 import InstanceHelper from './lib/instanceHelper';
 
 import Client from './client';
 import Host from './host';
-
-import * as shutdown from 'electron-shutdown-command';
 
 let appState : Client | Host;
 let mainWindow: BrowserWindow | null;
@@ -94,22 +91,19 @@ console.log();
 
 // Auto-updates
 if (import.meta.env.PROD) {
-  if(!process.argv.includes('--viewer')){
+  if(!process.argv.includes('--disableAutoUpdate')){
     autoUpdater.checkForUpdatesAndNotify();
-  }else{
-    autoUpdater.autoDownload = true;
-    autoUpdater.checkForUpdates();
-    autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-      console.log('Update downloaded');
-      console.log(releaseNotes,releaseName);
-
-      process.env.APPIMAGE = app.getPath('exe');
-      
-      if(process.argv.includes('--rebootAfterUpdate')) shutdown.reboot({timerseconds:60});
-
-
-      autoUpdater.quitAndInstall(true,process.argv.includes('--restartAfterUpdate'));
-    });
+    if(process.argv.includes('--viewer')){
+      autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+        console.log('Update downloaded');
+        console.log(releaseNotes,releaseName);
+        if(process.argv.includes('--restartAfterUpdate')) autoUpdater.quitAndInstall(true,true);
+        
+        process.env.APPIMAGE = app.getPath('exe');
+      });
+    }else{
+      autoUpdater.checkForUpdates();
+    }
   }
 } 
 

@@ -68,7 +68,7 @@ class Client extends State {
 
         this.interval = this.store.get('interval',5) as number;
         this.blackout = false;
-        this.identifie = 0;
+        this.identifie = 54;
 
         //Set window to kiosk mode
         if(import.meta.env.MODE !== 'development') _win.setKiosk(true);
