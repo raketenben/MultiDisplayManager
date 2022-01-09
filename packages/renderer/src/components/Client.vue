@@ -222,7 +222,7 @@
     <!-- Image -->
     <img 
       ref="imageContent"
-      :class="{'d-none': isImage === false}"
+      :class="{'d-none': isImage !== true}"
       @load="imageLoaded"
       @error="loadError"
     >
@@ -231,7 +231,7 @@
     <video 
       ref="videoContent" 
       autoplay
-      :class="{'d-none': isImage === true}"
+      :class="{'d-none': isImage !== false}"
       @ended="videoEnded"
       @error="loadError"
     />
@@ -247,42 +247,52 @@ export default defineComponent({
   name: 'Client',
   data: function(){
     return {
-      pairingKey: '------',
-      displayName: '',
+      /* modals */
+      setPasswordModal: null as bootstrap.Modal | null,
+      displayNameModal: null as bootstrap.Modal | null,
+      unlockModal: null as bootstrap.Modal | null,
+      pairingModal: null as bootstrap.Modal | null,
 
+      /* media type*/
+      isImage: false as boolean,
+
+      /* pairing key*/
+      pairingKey: '',
+
+      /* password */
       password: '',
       oldPassword: '',
       newPassword: '',
-
-      unlockResult: null as boolean | null,
       passwordSetResult: null as boolean | null,
+      unlockResult: null as boolean | null,
+
+      /* display name */
+      displayName: '',
       displayNameSetResult: null as boolean | null,
 
-      setPasswordModal: null as bootstrap.Modal | null,
-      unlockModal: null as bootstrap.Modal | null,
-      pairingModal: null as bootstrap.Modal | null,
-      displayNameModal: null as bootstrap.Modal | null,
-
-      isImage: false as boolean,
-
+      /* utility */
       identifie: 0 as number,
       blackout: false as boolean,
     };
   },
   mounted:function(){
+    /* modals */
     this.pairingModal = new bootstrap.Modal(this.$refs.pairingModal as HTMLElement,{backdrop: 'static'});
     this.setPasswordModal = new bootstrap.Modal(this.$refs.setPasswordModal as HTMLElement);
-    this.unlockModal = new bootstrap.Modal(this.$refs.unlockModal as HTMLElement);
     this.displayNameModal = new bootstrap.Modal(this.$refs.displayNameModal as HTMLElement);
+    this.unlockModal = new bootstrap.Modal(this.$refs.unlockModal as HTMLElement);
 
+    /* open pairing mode */
     window.addEventListener('keydown',(e) => {
       if(e.key == 'Escape') this.onEscape();
     });
 
+    /* get display name */
     window.link.getDisplayName().then((name) => {
       this.displayName = name;
     });
 
+    /* utility events */
     window.link.onBlackoutUpdated((blackout) => {
       this.blackout = blackout;
     });
@@ -290,15 +300,14 @@ export default defineComponent({
       this.identifie = identifie;
     });
 
-    window.link.onDisplaySucessfullyPaired(() => {
-      this.exitPairing();
-    });
-
+    /* display update*/
     window.link.onDisplayFileUpdated((filePath,isImage) => {
       (this.$refs.videoContent as HTMLVideoElement).pause();
       (this.$refs.videoContent as HTMLVideoElement).currentTime = 0;
 
       this.isImage = isImage;
+
+      if(filePath === undefined ) filePath = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
       if(isImage === true){
         (this.$refs.imageContent as HTMLImageElement).setAttribute('src',filePath);
@@ -307,8 +316,14 @@ export default defineComponent({
         (this.$refs.videoContent as HTMLVideoElement).play();
       }
     });
+
+    /* closing pairing mode */
+    window.link.onDisplaySucessfullyPaired(() => {
+      this.exitPairing();
+    });
   },
   methods:{
+    /* media events */
     videoEnded:function() : void {
       (this.$refs.videoContent as HTMLVideoElement).currentTime = 0;
       window.link.videoFinished();
@@ -320,6 +335,7 @@ export default defineComponent({
       window.link.loadError();
     },
 
+    /* start pairing mode */
     onEscape:function() : void {
         window.link.unlock('').then((unlocked) => {
           if(unlocked){
@@ -330,25 +346,35 @@ export default defineComponent({
           }
         });
     },
+
+    /* get new pairing key */
     updatePairingKey:function() : void {
       window.link.getPairingKey().then((key) => {
         this.pairingKey = key;
       });
     },
+
+    /* exit pairing mode */
     exitPairing:function() : void {
-      //TODO: make sure this is the correct way to exit pairing
+      //close all modals
       if(this.unlockModal) this.unlockModal.hide();
       if(this.pairingModal) this.pairingModal.hide();
       if(this.setPasswordModal) this.setPasswordModal.hide();
 
+      //disable pairing mode
       window.link.lock();
     },
+
+    /*modal buttons*/
     setPassword:function() : void {
       if(this.setPasswordModal) this.setPasswordModal.show();
     },
     setDisplayName:function() : void {
       if(this.displayNameModal) this.displayNameModal.show();
     },
+
+    /* form submit */
+    //password change
     changePasswordSubmit:function() : void {
       window.link.changePassword(this.oldPassword,this.newPassword).then((success) => {
           this.passwordSetResult = success;
@@ -356,6 +382,8 @@ export default defineComponent({
           this.newPassword = '';
       });
     },
+
+    //password unlock
     unlockSubmit:function(e : Event) : void {
       e.preventDefault();
       window.link.unlock(this.password).then((unlocked) => {
@@ -370,6 +398,8 @@ export default defineComponent({
         this.password = '';
       });
     },
+
+    //display name change
     setDisplaySubmit:function(e : Event) : void {
       e.preventDefault();
       window.link.setDisplayName(this.displayName).then((success) => {
