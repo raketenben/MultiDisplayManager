@@ -90,6 +90,8 @@ if (import.meta.env.MODE === 'development') {
     .catch(e => console.error('Failed install extension:', e));
 }
 
+console.log();
+
 // Auto-updates
 if (import.meta.env.PROD) {
   if(!process.argv.includes('--viewer')){
@@ -101,11 +103,10 @@ if (import.meta.env.PROD) {
       console.log('Update downloaded');
       console.log(releaseNotes,releaseName);
 
+      process.env.APPIMAGE = app.getPath('exe');
+      
       if(process.argv.includes('--rebootAfterUpdate')) shutdown.reboot({timerseconds:60});
 
-      if(process.env.DESKTOPINTEGRATION === 'AppImageLauncher') {
-        process.env.APPIMAGE = process.env.ARGV0;
-      }
 
       autoUpdater.quitAndInstall(true,process.argv.includes('--restartAfterUpdate'));
     });
