@@ -27,31 +27,36 @@ class ClientManager {
 
     constructor () {
         this.emitter = new events.EventEmitter();
+        this.requestHelper = new RequestHelper(this);
 
         this.store = new Store({cwd: `${InstanceHelper.getInstanceSavePath()}`,name:'pairedClients'});
+
+        this.pairableClients = new Map();
+        this.availableClients = new Map();
 
         this.pairedClients = new Map(JSON.parse(this.store.get('clients','[]') as string));
         this.clientCerts = new Map(JSON.parse(this.store.get('certs','[]') as string));
         this.clientTokens = new Map(JSON.parse(this.store.get('tokens','[]') as string));
 
         /* check availability of clients */
-        this.pairedClients.forEach(async (client) => {
-            client.available = await this.checkClientAvailable(client);
-            this.emitPairedClientsUpdated();
-        });
-
-        this.pairableClients = new Map();
-        this.availableClients = new Map();
-
-        this.requestHelper = new RequestHelper(this);
+        for(const [,client] of this.pairedClients) {
+            this.checkClientAvailable(client).then((available) => {
+                client.available = available;
+                this.savePairedClients();
+                this.emitPairedClientsUpdated();
+            });
+        }
         
         this.emitPairedClientsUpdated();
     }
 
     private async checkClientAvailable(client : Client) : Promise<boolean> {
         return new Promise((resolve) => {
-            const request = this.requestHelper.request(client,'',{},true,() => {
-                resolve(true);
+            const request = this.requestHelper.request(client,'',{},false,(res) => {
+                if(res.statusCode === 200)
+                    resolve(true);
+                else
+                    resolve(false);
             });
             request.on('error',() => {
                 resolve(false);
@@ -251,7 +256,7 @@ class ClientManager {
     }
 
     async unpairClient(clientName : string) : Promise<boolean> {
-        const client = this.availableClients.get(clientName);
+        const client = this.pairedClients.get(clientName);
         if(!client) throw new Error(`Client ${clientName} not found`);
 
         //remove client from store
