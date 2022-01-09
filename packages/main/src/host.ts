@@ -42,6 +42,8 @@ class Host extends State {
             }
         });
 
+        if(import.meta.env.MODE === 'production') this.window.maximize();
+
         return this;
     }
 
