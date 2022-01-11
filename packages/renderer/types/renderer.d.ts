@@ -7,6 +7,7 @@ export interface LinkAPI {
     pairClient: (clientName : string,key : string) => Promise<boolean>,
     unpairClient: (clientName : string) => Promise<boolean>,
     getClientStatus: (clientName : string) => Promise<boolean | null>,
+    getClientInterval: (clientName : string) => Promise<number | null>,
     getClientFiles: (clientName : string) => Promise<string[] | null>,
     reorderClientFiles: (clientName : string,oldIndex : number,newIndex : number) => Promise<boolean> ,
     deleteClientFile: (clientName : string,index : number) => Promise<boolean>,

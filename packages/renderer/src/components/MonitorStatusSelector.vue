@@ -98,10 +98,21 @@ export default defineComponent({
       'interval': function() {
         window.link.updateClientInterval(this.data.name, this.interval);
       },
+      'data': function() {
+        this.updateInterval();
+      },
+    },
+    mounted:function(){
+      this.updateInterval();
     },
     methods:{
       openFileModal:function(){
         (this.$refs.fileModal as typeof FileManager).show();
+      },
+      updateInterval:function(){
+        window.link.getClientInterval(this.data.name).then(interval => {
+          if(interval) this.interval = interval;
+        });
       },
     },
 });

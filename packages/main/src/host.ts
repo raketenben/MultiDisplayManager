@@ -114,6 +114,10 @@ class Host extends State {
             return this.checkClientAvailable(client);
         });
 
+        ipcMain.handle('getClientInterval',async (e,clientName : string) : Promise<number | null> => {
+            return await this.getClientInterval(clientName);
+        });
+
         ipcMain.handle('getClientFiles',async (e,clientName : string) : Promise<null | string[]> => {
             try {
                 return await this.getClientFiles(clientName);
@@ -184,6 +188,22 @@ class Host extends State {
             request.on('error',() => {
                 resolve(false);
             });
+            request.end();
+        });
+    }
+
+    async getClientInterval(clientName : string) : Promise<number | null> {
+        return new Promise((resolve) => {
+            const request = this.requestHelper.request(clientName,'/api/interval',{},false,(res) => {
+                if(res.statusCode === 200){
+                    res.on('data',(data) => {
+                        resolve(parseFloat(data.toString()));
+                    });
+                } else {
+                    resolve(null);
+                }
+            });
+            request.on('error',() => resolve(null));
             request.end();
         });
     }
