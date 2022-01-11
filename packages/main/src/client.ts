@@ -86,21 +86,94 @@ class Client extends State {
             }
         });
 
-        //generate pairing key
-        this.newPairingKey();
+        await this.handleRenderer();
+        
+        await this.updateDisplayFile();
+
+        await this.initServerInstance();
 
         this.fileManager.emitter.on('filesUpdated',async () => {
             this.updateDisplayFile();
         });
 
-        this.updateDisplayFile();
-
-        this.handleRenderer();
-        this.initServerInstance();
-
+        //generate pairing key
+        this.newPairingKey();
     }
 
-    initServerInstance() : void {
+    async handleRenderer() : Promise<void> {
+
+        /* display name*/
+        ipcMain.handle('getDisplayName',() => {
+            return this.getDisplayName();
+        });
+
+        ipcMain.handle('setDisplayName',(e,name : string) => {
+            this.setDisplayName(name);
+            this.updateBonjourService();
+            return true;
+        });
+
+        //get pairing key
+        ipcMain.handle('getPairingKey',() => {
+            return (this.pairingMode) ? this.pairingKey : null;
+        });
+
+
+        /* handle password check */
+        ipcMain.handle('unlock',(e,password) => {
+            if(this.checkPassword(password)){
+                this.pairingMode = true;
+                this.updateBonjourService();
+                return true;
+            }else{
+                return false;
+            }
+        });
+
+        ipcMain.handle('lock',() => {
+            this.pairingMode = false;
+            this.updateBonjourService();
+        });
+
+        /* password change */
+        ipcMain.handle('changePassword',(e,oldPassword,newPassword) => {
+            if(this.checkPassword(oldPassword)){
+                this.setPassword(newPassword);
+                return true;
+            }else{
+                return false;
+            }
+        });
+
+        /* utility function update */
+        ipcMain.on('updateBlackout',(e) => {
+            e.reply('blackoutUpdated',this.blackout);
+        });
+
+        ipcMain.on('updateIdentifie',(e) => {
+            e.reply('identifieUpdated',this.identifie);
+        });
+
+        /* send current display file on init*/
+        ipcMain.on('updateDisplayFile',async () => {
+            this.updateDisplayFile();
+        });
+
+        /* media events*/
+        ipcMain.handle('imageLoaded',() => {
+            this.timeout = setTimeout(this.nextFile.bind(this),this.interval * 1000);
+        });
+
+        ipcMain.handle('loadError',() => {
+            this.nextFile();
+        });
+
+        ipcMain.handle('videoFinished',() => {
+            this.nextFile();
+        });
+    }
+
+    async initServerInstance() : Promise<void> {
         //get certificate
         const cert = CertificateManager.getCertificate();
         const priavteKey = forge.pki.privateKeyToPem(CertificateManager.getCertificateKeys().privateKey);
@@ -177,9 +250,14 @@ class Client extends State {
             res.send('OK');
         });*/
 
+        api.get('/interval',(req,res) => {
+            res.json(this.interval);
+        });
+
         /* commands */
         api.post('/interval/:value',(req,res) => {
             this.interval = parseFloat(req.params.value);
+            this.storeInterval();
             res.status(200).send('OK');
         });
 
@@ -238,81 +316,8 @@ class Client extends State {
 
         this.serverInstance.listen(0,this.serverReady.bind(this));
     }
-
-    handleRenderer() : void {
-
-        /* display name*/
-        ipcMain.handle('getDisplayName',() => {
-            return this.getDisplayName();
-        });
-
-        ipcMain.handle('setDisplayName',(e,name : string) => {
-            this.setDisplayName(name);
-            this.updateBonjourService();
-            return true;
-        });
-
-        //get pairing key
-        ipcMain.handle('getPairingKey',() => {
-            return (this.pairingMode) ? this.pairingKey : null;
-        });
-
-
-        /* handle password check */
-        ipcMain.handle('unlock',(e,password) => {
-            if(this.checkPassword(password)){
-                this.pairingMode = true;
-                this.updateBonjourService();
-                return true;
-            }else{
-                return false;
-            }
-        });
-
-        ipcMain.handle('lock',() => {
-            this.pairingMode = false;
-            this.updateBonjourService();
-        });
-
-        /* password change */
-        ipcMain.handle('changePassword',(e,oldPassword,newPassword) => {
-            if(this.checkPassword(oldPassword)){
-                this.setPassword(newPassword);
-                return true;
-            }else{
-                return false;
-            }
-        });
-
-        /* utility function update */
-        ipcMain.on('updateBlackout',(e) => {
-            e.reply('blackoutUpdated',this.blackout);
-        });
-
-        ipcMain.on('updateIdentifie',(e) => {
-            e.reply('identifieUpdated',this.identifie);
-        });
-
-        /* send current display file on init*/
-        ipcMain.on('updateDisplayFile',async () => {
-            this.updateDisplayFile();
-        });
-
-        /* media events*/
-        ipcMain.handle('imageLoaded',() => {
-            this.timeout = setTimeout(this.nextFile.bind(this),this.interval * 1000);
-        });
-
-        ipcMain.handle('loadError',() => {
-            this.nextFile();
-        });
-
-        ipcMain.handle('videoFinished',() => {
-            this.nextFile();
-        });
-    }
     
-    serverReady() : void {
+    async serverReady() : Promise<void> {
         const address = this.serverInstance.address();
         if(address && typeof(address) != 'string'){
             this.port = address.port;
@@ -365,6 +370,11 @@ class Client extends State {
                 this.announceBonjourService();
             });
         }
+    }
+
+    /* interval*/
+    storeInterval() : void {
+        this.store.set('interval',this.interval);
     }
 
     /* auth token*/

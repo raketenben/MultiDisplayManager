@@ -60,6 +60,9 @@ const linkApi = {
     getClientStatus: function(clientName : string) : Promise<boolean | null> {
         return ipcRenderer.invoke('getClientStatus',clientName);
     },
+    getClientInterval: function(clientName : string) : Promise<number | null> {
+        return ipcRenderer.invoke('getClientInterval',clientName);
+    },
     getClientFiles: function(clientName : string) : Promise<string[] | null> {
         return ipcRenderer.invoke('getClientFiles',clientName);
     },
