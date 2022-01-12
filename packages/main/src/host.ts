@@ -304,10 +304,13 @@ class Host extends State {
 
     async selectFiles() : Promise<string[]>{
         return new Promise(function(res,rej){
+            const imageExstensions = ['jpg','jpeg','png','apng','avif','gif','webp'];
+            const videoExstensions = ['mp4','mkv','mov','webm','wmv','mpg','mpeg'];
+
             const fileTypes = [
-                {name:'Media', extensions:['jpg','jpeg','png','apng','avif','gif','svg','webp','mp4','mkv','mov','webm','wmv','mpg','mpeg']},
-                {name:'Images', extensions:['jpg','jpeg','png','apng','avif','gif','webp']},
-                {name:'Video', extensions:['mp4','mkv','mov','webm','wmv','mpg','mpeg']},
+                {name:'Media', extensions:[...imageExstensions,...videoExstensions]},
+                {name:'Images', extensions:[...imageExstensions]},
+                {name:'Video', extensions:[...videoExstensions]},
                 {name:'All Files', extensions:['*']},
             ];
             dialog.showOpenDialog({properties:['openFile','multiSelections'],filters: fileTypes }).then(function (response) {
