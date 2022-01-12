@@ -328,13 +328,18 @@ class Client extends State {
 
     /* display file management */
     nextFile() : void{
-        if(this.timeout) clearTimeout(this.timeout);
+        if(this.timeout) {
+            clearTimeout(this.timeout);
+            this.timeout = null;
+        }
         this.fileIndex++;
         if(this.fileIndex >= this.fileManager.getFileCount()) this.fileIndex = 0;
         this.updateDisplayFile();
     }
 
     async updateDisplayFile() : Promise<void> {
+        if(this.timeout) return;
+
         if(this.fileManager.getFileCount() < 1) 
             return this.window.webContents.send('displayFileUpdated',undefined,undefined);
 
@@ -347,6 +352,11 @@ class Client extends State {
             return this.nextFile();
 
         const isImage = mimeType.startsWith('image/') ? true : (mimeType.startsWith('video/') ? false : undefined);
+
+        //should prevent getting stuck if a file does not conform to the mime type
+        if(isImage === undefined)
+            setTimeout(this.nextFile.bind(this),this.interval*1000);
+
         this.window.webContents.send('displayFileUpdated',filePath.diskPath,isImage);
     }
 
