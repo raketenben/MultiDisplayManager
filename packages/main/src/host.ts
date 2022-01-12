@@ -306,7 +306,7 @@ class Host extends State {
         return new Promise(function(res,rej){
             const fileTypes = [
                 {name:'Media', extensions:['jpg','jpeg','png','apng','avif','gif','svg','webp','mp4','mkv','mov','webm','wmv','mpg','mpeg']},
-                {name:'Images', extensions:['jpg','jpeg','png','apng','avif','gif','svg','webp']},
+                {name:'Images', extensions:['jpg','jpeg','png','apng','avif','gif','webp']},
                 {name:'Video', extensions:['mp4','mkv','mov','webm','wmv','mpg','mpeg']},
                 {name:'All Files', extensions:['*']},
             ];
