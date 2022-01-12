@@ -304,7 +304,13 @@ class Host extends State {
 
     async selectFiles() : Promise<string[]>{
         return new Promise(function(res,rej){
-            dialog.showOpenDialog({properties:['openFile','multiSelections'] }).then(function (response) {
+            const fileTypes = [
+                {name:'Media', extensions:['jpg','jpeg','png','apng','avif','gif','svg','webp','mp4','mkv','mov','webm','wmv','mpg','mpeg']},
+                {name:'Images', extensions:['jpg','jpeg','png','apng','avif','gif','svg','webp']},
+                {name:'Video', extensions:['mp4','mkv','mov','webm','wmv','mpg','mpeg']},
+                {name:'All Files', extensions:['*']},
+            ];
+            dialog.showOpenDialog({properties:['openFile','multiSelections'],filters: fileTypes }).then(function (response) {
                 if (!response.canceled) {
                     res(response.filePaths);
                 } else {
