@@ -414,7 +414,7 @@ class Client extends State {
     /* instance identifier */
     getRandomInstanceIdentifier() : string {
         const instanceIdentifier = this.store.get('instanceIdentifier',null) as string | null;
-        if(instanceIdentifier === null) {
+        if(instanceIdentifier === null || process.argv.includes('--reset-identifier')) {
             const newInstanceIdentifier = randomstring.generate(8);
             this.store.set('instanceIdentifier',newInstanceIdentifier);
             return newInstanceIdentifier;
