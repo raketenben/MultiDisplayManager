@@ -8,6 +8,7 @@ export interface LinkAPI {
     unpairClient: (clientName : string) => Promise<boolean>,
     getClientStatus: (clientName : string) => Promise<boolean | null>,
     getClientInterval: (clientName : string) => Promise<number | null>,
+    getClientPauseState: (clientName : string) => Promise<boolean | null>,
     getClientFiles: (clientName : string) => Promise<string[] | null>,
     reorderClientFiles: (clientName : string,oldIndex : number,newIndex : number) => Promise<boolean> ,
     deleteClientFile: (clientName : string,index : number) => Promise<boolean>,
@@ -22,6 +23,7 @@ export interface LinkAPI {
     updateClientBlackout: (clientName : string,blackout : boolean) => Promise<boolean>,
     updateClientIdentifie: (clientName : string,identifie : number) => Promise<boolean>,
     updateClientInterval: (clientName : string,interval : number) => Promise<boolean>,
+    updateClientPauseState: (clientName : string,pauseState : boolean) => Promise<boolean>,
 
     /*client specific*/
     lock: () => Promise<void>,

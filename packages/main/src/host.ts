@@ -100,6 +100,17 @@ class Host extends State {
             });
         });
 
+        ipcMain.handle('updateClientPauseState',(event,clientName : string,value : boolean) => {
+            return new Promise((resolve,reject) => {
+                const path = `/api/paused/${value.toString()}`;
+                const request = this.requestHelper.request(clientName,path,{method:'POST'},true,(res) => {
+                    resolve(res.statusCode === 200);
+                });
+                request.on('error',reject);
+                request.end();
+            });
+        });
+
         ipcMain.handle('pairClient',async (e,{clientName,key}) : Promise<boolean> => {
             return await this.clientManager.pairClient(clientName,key);
         });
@@ -124,6 +135,15 @@ class Host extends State {
             } catch(e){
                 console.error(e);
                 return null;
+            }
+        });
+
+        ipcMain.handle('getClientPauseState',async (e,clientName : string) : Promise<boolean> => {
+            try {
+                return await this.getClientPauseState(clientName);
+            } catch(e){
+                console.error(e);
+                return true;
             }
         });
 
@@ -194,7 +214,7 @@ class Host extends State {
 
     async getClientInterval(clientName : string) : Promise<number | null> {
         return new Promise((resolve) => {
-            const request = this.requestHelper.request(clientName,'/api/interval',{},false,(res) => {
+            const request = this.requestHelper.request(clientName,'/api/interval',{},true,(res) => {
                 if(res.statusCode === 200){
                     res.on('data',(data) => {
                         resolve(parseFloat(data.toString()));
@@ -207,6 +227,23 @@ class Host extends State {
             request.end();
         });
     }
+
+    async getClientPauseState(clientName : string) : Promise<boolean> {
+        return new Promise((resolve) => {
+            const request = this.requestHelper.request(clientName,'/api/paused',{},true,(res) => {
+                if(res.statusCode === 200){
+                    res.on('data',(data) => {
+                        resolve(data.toString() === 'true');
+                    });
+                } else {
+                    resolve(false);
+                }
+            });
+            request.on('error',() => resolve(false));
+            request.end();
+        });
+    }
+
 
     async getClientFiles(clientName : string) : Promise<string[]> {
         return new Promise((resolve,reject) => {

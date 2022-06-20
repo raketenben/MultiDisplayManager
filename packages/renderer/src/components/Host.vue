@@ -1,11 +1,11 @@
 <template>
   <nav 
-    class="navbar bg-light p-2"
+    class="navbar bg-light p-0 justify-content-between"
   >
-    <div class="justify-content-between">
+    <div>
       <!-- blackout the screens -->
       <button 
-        class="btn navbar-light btn-primary m-2"
+        class="btn navbar-light btn-primary m-1"
         @click="blackoutActive = !blackoutActive"
       >
         <i 
@@ -20,7 +20,7 @@
 
       <!-- identifie the screens -->
       <button 
-        class="btn navbar-light btn-primary m-2"
+        class="btn navbar-light btn-primary m-1"
         @click="identifieActive = !identifieActive"
       >
         <i 
@@ -31,6 +31,28 @@
           v-else 
           class="bi bi-x-circle" 
         />
+      </button>
+    </div>
+    <div 
+      class="btn-group align-self-sm-center" 
+      role="group" 
+      aria-label="Play / Pause"
+    >
+      <div class="input-group-text">
+        <i class="bi bi-collection-play-fill text-dark" />
+      </div>
+      <button
+        class="btn navbar-light btn-outline-primary"
+        @click="setPauseAll(false)"
+      >
+        <i class="bi bi-play" />
+      </button>
+
+      <button
+        class="btn navbar-light btn-outline-primary"
+        @click="setPauseAll(true)"
+      >
+        <i class="bi bi-pause" />
       </button>
     </div>
 
@@ -66,10 +88,11 @@
         class="col" 
       >
         <mss 
+          :ref="setRef"
           :blackout="blackoutActive" 
           :identifie="identifieActive" 
           :data="data"
-          :index="parseInt(i.toString())" 
+          :index="parseInt(i.toString())"
         />
       </div>
     </div>
@@ -77,13 +100,10 @@
 </template>
 
 <script lang="ts">
-
 import {defineComponent} from 'vue';
 import MonitorStatusSelector from './MonitorStatusSelector.vue';
 import AvailableClientsModal from './AvailableClientsModal.vue';
-
 import type { Client } from 'types/renderer';
-
 export default defineComponent({
   name: 'Host',
   components:{
@@ -95,7 +115,7 @@ export default defineComponent({
       available_clients: new Map() as Map<string,Client>,
       pairable_clients: new Map() as Map<string,Client>,
       paired_clients: new Map() as Map<string,Client>,
-
+      mssRefs: [] as Array<typeof MonitorStatusSelector>,
       identifieActive: false as boolean,
       blackoutActive: false as boolean,
     };
@@ -105,21 +125,32 @@ export default defineComponent({
       return this.paired_clients.size;
     },
   },
+  beforeUpdate: function(){
+    this.mssRefs = [];
+  },
   mounted:function(){
     window.link.onAvailableClients((clients : Map<string,Client>) => {
       this.available_clients = clients;
     });
-
     window.link.onPairableClients((clients : Map<string,Client>) => {
       this.available_clients = clients;
     });
-
     window.link.onPairedClients((clients : Map<string,Client>) => {
       this.paired_clients = clients;
     });
   },
+  methods: {
+    setPauseAll: function(paused: boolean) {
+      for(let e of this.mssRefs) {
+        e.setPaused(paused);
+      }
+    },
+    setRef: function(ele: typeof MonitorStatusSelector) : string {
+      this.mssRefs.push(ele);
+      return ele.name;
+    },
+  },
 });
-
 </script>
 
 <style scoped>

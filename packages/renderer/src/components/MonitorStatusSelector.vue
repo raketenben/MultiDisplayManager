@@ -3,18 +3,20 @@
     <div 
       class="container d-flex flex-row justify-content-between align-items-center"
     >
-      <h4>{{ data.displayName }}</h4>
+      <h4 class="m-0">
+        {{ data.displayName }}
+      </h4>
       <div>
         <mi 
           :id="index+1" 
         />
       </div>
     </div>
-    <div class="form-group m-2">
+    <div class="container form-group">
       <label>Display Time (s): </label>
       <input 
         v-model="interval" 
-        class="m-1" 
+        class="m-1 border border-dark rounded" 
         type="number" 
         min="0.1" 
         step="0.1"
@@ -22,21 +24,26 @@
       >
     </div>
     <div class="container d-flex flex-row align-items-center justify-content-between p-0">
-      <button 
-        class="btn btn-secondary m-1"
-        @click="openFileModal"
-      >
-        <i class="bi bi-files" />
-        Manage Files
-      </button>
-      <span
-        v-if="data.available"
-        class="text-success"
-      >Available</span>
-      <span
-        v-else
-        class="text-danger"
-      >Not Available</span>
+      <div class="container d-flex gap-1">
+        <button 
+          class="btn btn-secondary"
+          @click="openFileModal"
+        >
+          <i class="bi bi-files" />
+          Manage Files
+        </button>
+        <ppb v-model="paused" />
+      </div>
+      <div>
+        <span
+          v-if="data.available"
+          class="text-success"
+        >Available</span>
+        <span
+          v-else
+          class="text-danger"
+        >Not Available</span>
+      </div>
     </div>
   </div>
   <fm
@@ -48,18 +55,16 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import MonitorImage from './MonitorImage.vue';
-
 import FileManager from './FileManager.vue';
-
+import PausePlayButton from './PausePlayButton.vue';
 import type { Client } from 'types/renderer';
 import type  { PropType } from 'vue';
-
-
 export default defineComponent({
     name: 'MonitorStatusSelector',
     components: {
       mi:MonitorImage,
       fm: FileManager,
+      ppb: PausePlayButton,
     },
     props:{
         'index':{
@@ -82,6 +87,7 @@ export default defineComponent({
     data:function(){
       return {
         interval: 5,
+        paused: false,
       };
     },
     watch: {
@@ -98,12 +104,16 @@ export default defineComponent({
       'interval': function() {
         window.link.updateClientInterval(this.data.name, this.interval);
       },
+      'paused': function() {
+        window.link.updateClientPauseState(this.data.name, this.paused);
+      },
       'data': function() {
         this.updateInterval();
       },
     },
     mounted:function(){
       this.updateInterval();
+      this.updatePauseState();
     },
     methods:{
       openFileModal:function(){
@@ -113,6 +123,16 @@ export default defineComponent({
         window.link.getClientInterval(this.data.name).then(interval => {
           if(interval) this.interval = interval;
         });
+      },
+      updatePauseState:function(){
+        window.link.getClientPauseState(this.data.name).then(paused => {
+          if(paused !== null) this.paused = paused;
+        });
+      },
+      setPaused:function(paused : boolean){
+        this.paused = paused;
+        //TODO pause call
+        //window.link.updateClientPaused(this.data.name, this.paused);
       },
     },
 });

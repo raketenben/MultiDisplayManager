@@ -63,6 +63,9 @@ const linkApi = {
     getClientInterval: function(clientName : string) : Promise<number | null> {
         return ipcRenderer.invoke('getClientInterval',clientName);
     },
+    getClientPauseState: function(clientName : string) : Promise<boolean | null> {
+        return ipcRenderer.invoke('getClientPauseState',clientName);
+    },
     getClientFiles: function(clientName : string) : Promise<string[] | null> {
         return ipcRenderer.invoke('getClientFiles',clientName);
     },
@@ -87,6 +90,9 @@ const linkApi = {
     },
     updateClientIdentifie: function(clientName : string,identifie : number) : Promise<boolean> {
         return ipcRenderer.invoke('updateClientIdentifie',clientName,identifie);
+    },
+    updateClientPauseState: function(clientName : string,pauseState : boolean) : Promise<boolean> {
+        return ipcRenderer.invoke('updateClientPauseState',clientName,pauseState);
     },
 
     /*client specific*/
@@ -119,6 +125,12 @@ const linkApi = {
         ipcRenderer.send('updateIdentifie',true);
         ipcRenderer.on('identifieUpdated',(event,identifie : number) => {
             callback(identifie);
+        });
+    },
+    onPauseStateUpdated: function(callback : (pause : boolean) => void) : void {
+        ipcRenderer.send('updatePauseState',true);
+        ipcRenderer.on('pauseStateUpdated',(event,pause : boolean) => {
+            callback(pause);
         });
     },
 
