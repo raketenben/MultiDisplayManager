@@ -104,12 +104,16 @@ export default defineComponent({
       'interval': function() {
         window.link.updateClientInterval(this.data.name, this.interval);
       },
+      'paused': function() {
+        window.link.updateClientPauseState(this.data.name, this.paused);
+      },
       'data': function() {
         this.updateInterval();
       },
     },
     mounted:function(){
       this.updateInterval();
+      this.updatePauseState();
     },
     methods:{
       openFileModal:function(){
@@ -118,6 +122,11 @@ export default defineComponent({
       updateInterval:function(){
         window.link.getClientInterval(this.data.name).then(interval => {
           if(interval) this.interval = interval;
+        });
+      },
+      updatePauseState:function(){
+        window.link.getClientPauseState(this.data.name).then(paused => {
+          if(paused !== null) this.paused = paused;
         });
       },
       setPaused:function(paused : boolean){

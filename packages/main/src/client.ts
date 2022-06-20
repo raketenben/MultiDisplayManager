@@ -32,6 +32,7 @@ class Client extends State {
     timeout: null | NodeJS.Timeout;
     fileIndex : number;
 
+    isPaused : boolean;
     interval : number;
     identifie: number;
     blackout: boolean;
@@ -59,6 +60,7 @@ class Client extends State {
         this.timeout = null;
         this.fileIndex = 0;
 
+        this.isPaused = false;
         this.interval = this.store.get('interval',5) as number;
         this.identifie = 0;
         this.blackout = false;
@@ -161,7 +163,8 @@ class Client extends State {
 
         /* media events*/
         ipcMain.handle('imageLoaded',() => {
-            this.timeout = setTimeout(this.nextFile.bind(this),this.interval * 1000);
+            if(!this.isPaused)
+                this.timeout = setTimeout(this.nextFile.bind(this),this.interval * 1000);
         });
 
         ipcMain.handle('loadError',() => {
@@ -254,6 +257,10 @@ class Client extends State {
             res.json(this.interval);
         });
 
+        api.get('/paused',(req,res) => {
+            res.json(this.isPaused);
+        });
+
         /* commands */
         api.post('/interval/:value',(req,res) => {
             this.interval = parseFloat(req.params.value);
@@ -271,6 +278,12 @@ class Client extends State {
             this.blackout = (req.params.state === 'true');
             res.status(200).send('OK');
             this.window.webContents.send('blackoutUpdated',this.blackout);
+        });
+
+        api.post('/paused/:state',(req,res) => {
+            this.isPaused = (req.params.state === 'true');
+            res.status(200).send('OK');
+            this.updatePauseState();
         });
 
         //get list of files
@@ -360,6 +373,19 @@ class Client extends State {
         this.window.webContents.send('displayFileUpdated',filePath.diskPath,isImage);
     }
 
+    /* update Pause state */
+    updatePauseState() : void {
+        if(this.isPaused){
+            //prevent next image from being displayed
+            if(this.timeout) {
+                clearTimeout(this.timeout);
+                this.timeout = null;
+            }
+        }else{
+            this.updateDisplayFile();
+        }
+    }
+
     /* network service broadcast */
     announceBonjourService() : void {
         this.bonjourService = this.bonjourInstance.publish({
@@ -381,6 +407,7 @@ class Client extends State {
             });
         }
     }
+
 
     /* interval*/
     storeInterval() : void {
