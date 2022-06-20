@@ -24,7 +24,7 @@ const config = {
     base: '',
     server: {
         fs: {
-            strict: true,
+            strict: process.env.MODE === 'production',
         },
     },
     build: {
